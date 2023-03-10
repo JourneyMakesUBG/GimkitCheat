@@ -24,7 +24,6 @@
 		return str.replace(/style=".*?"/g, "");
 	}
 
-
 	var listenedButtons = [];
 	let lastQuestion = null;
 	let lastAnswer = null;
@@ -37,7 +36,7 @@
 	let customStyles = new CSSStyleSheet();
 	customStyles.replaceSync(`
 		.answer-hover {
-			transition: 0.5s;
+			transition: filter 0.35s;
 		}
 		.answer-hover:hover {
 			filter: brightness(1.2);
