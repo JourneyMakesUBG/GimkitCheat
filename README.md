@@ -20,3 +20,7 @@ By hitting shift three times in quick succession, the script will toggle between
 Gimkit, for whatever reason, forces you to type into the input box before submitting a text answer. This script tells you the correct answer, but you still need to type it in.
 
 ![Image: what colored in answers look like](/images/correct_example.png)
+
+### Disclaimer
+
+This script is not endorsed by Gimkit in any way. You assume all responsibility for using this. It's also really annoying to test this, so it's not guaranteed to work on all browsers. If you find any bugs, please report them [here](/issues).
