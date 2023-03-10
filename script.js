@@ -36,7 +36,7 @@
 	let customStyles = new CSSStyleSheet();
 	customStyles.replaceSync(`
 		.answer-hover {
-			transition: filter 0.35s;
+			transition: filter 0.18s ease-in-out;
 		}
 		.answer-hover:hover {
 			filter: brightness(1.2);
