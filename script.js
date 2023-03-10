@@ -24,6 +24,7 @@
 		return str.replace(/style=".*?"/g, "");
 	}
 
+
 	var listenedButtons = [];
 	let lastQuestion = null;
 	let lastAnswer = null;
@@ -33,10 +34,22 @@
 
 	let active = true;
 
+	let customStyles = new CSSStyleSheet();
+	customStyles.replaceSync(`
+		.answer-hover {
+			transition: 0.5s;
+		}
+		.answer-hover:hover {
+			filter: brightness(1.2);
+		}
+	`);
+	// add it to the document
+	document.adoptedStyleSheets = [customStyles];
+
 	function pageChange() {
 		if(!active) return;
 		// the menu was probably opened
-		let items = document.querySelectorAll(selector)
+		let items = Array.from(document.querySelectorAll(selector))
 
 		if(items.length > 0){
 			if(items.length == 1 && (document.querySelector("input") == null)){
@@ -54,6 +67,10 @@
 				return;
 			}
 			lastQuestion = stripStyles(items[0].parentElement.innerHTML);
+
+			// remove the question text
+			if(items.length == 6) items = items.slice(2);
+			else items = items.slice(1);
 
 			// if the question was already answered, highlight the correct answer
 			if(lastQuestion in answers){
@@ -74,19 +91,21 @@
 
 				// get the colors of the options
 				let colors = [];
-				items.forEach((item, i) => {
-					if(i == 0) return;
+				for(let i = 0; i < items.length; i++) {
+					let item = items[i];
+
 					let parentAmount = 5;
 					if(item.nodeName == "IMG") parentAmount = 1;
-					let bgColor = getComputedStyle(item.nthparent(parentAmount)).background;
+
+					let checkNode = item.nthparent(parentAmount);
+					let bgColor = getComputedStyle(checkNode).background;
 					colors.push(bgColor);
-				})
+				}
 
 				let correctSeen = false;
 				let correctExists = false;
 				for(let i = 0; i < items.length; i++){
 					let item = items[i];
-					let parentAmount = 5;
 					if(item.nodeName == "IMG") parentAmount = 1;
 					if(stripStyles(item.parentElement.innerHTML) == stripStyles(answer.correct)){
 						correctExists = true;
@@ -98,7 +117,7 @@
 					delete answers[lastQuestion];
 					return;
 				}
-				for(let i = items.length==5?1:2; i < items.length && answer.correct; i++){
+				for(let i = 0; i < items.length && answer.correct; i++){
 					// color and move answers
 					let item = items[i]
 					let parentAmount = 3;
@@ -107,9 +126,13 @@
 						// color in and move the correct answer to the bottom
 						if(color) item.nthparent(parentAmount).style.backgroundColor = "green";
 						else{
-							// set it to the correct color
-							if(item.nodeName == "IMG") item.parentElement.style.background = colors[3];
-							else item.nthparent(5).style.background = colors[3];
+							let changeItem = item.nthparent(5);
+							if(item.nodeName == "IMG") changeItem = item.parentElement;
+							
+							// swap the item's background color to match the one it's supposed to be
+							changeItem.style.background = colors[3];
+
+							changeItem.classList.add("answer-hover");
 						}
 						let outer = item.nthparent(parentAmount*2);
 						let buttonParent = document.querySelectorAll(selector)[2]
@@ -123,12 +146,14 @@
 					}else{
 						// color incorrect answers
 						if(color) item.nthparent(parentAmount).style.backgroundColor = "red";
-						else {
-							if(correctSeen){
-								// swap the item's background color to match the one it's supposed to be
-								if(item.nodeName == "IMG") item.parentElement.style.background = colors[i-2];
-								else item.nthparent(5).style.background = colors[i-2];
-							}
+						else if(correctSeen){
+							let changeItem = item.nthparent(5);
+							if(item.nodeName == "IMG") changeItem = item.parentElement;
+							
+							// swap the item's background color to match the one it's supposed to be
+							changeItem.style.background = colors[i-1];
+
+							changeItem.classList.add("answer-hover");
 						}
 					}
 				}
@@ -145,7 +170,7 @@
 			}
 
 			lastAnswerType = "button";
-			for(let i = 1; i < items.length; i++){
+			for(let i = 0; i < items.length; i++){
 				let button = items[i].nthparent(6);
 				if(items[i].nodeName == "IMG") button = items[i].nthparent(2);
 
