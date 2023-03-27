@@ -43,7 +43,7 @@
 		}
 	`);
 	// add it to the document
-	document.adoptedStyleSheets = [customStyles];
+	document.adoptedStyleSheets.push(customStyles);
 
 	function pageChange() {
 		if(!active) return;
