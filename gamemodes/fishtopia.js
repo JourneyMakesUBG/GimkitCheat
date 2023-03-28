@@ -130,8 +130,6 @@
 	})
 
 	let socket = null;
-	let lastMessage = null;
-	let correctAnswers = [];
 	let lastMenu = null;
 
 	let quickTravel = new Map()
@@ -154,7 +152,6 @@
 		wsSend.call(this, data)
 		// decode the data from an ArrayBuffer to a string
 		let str = arrayBufferToString(data)
-		if(str.includes("answered")) lastMessage = data
 		if(str.includes("interacted")) {
 			if(sellMessage == data || fishMessage == data) return
 			if(str.includes("dropped-item")) return
@@ -197,15 +194,6 @@
 			}
 			else lastMenu = null
 		}
-		let greenBgExists = Array.from(document.querySelectorAll("div")).some(e => getComputedStyle(e).backgroundColor == "rgb(56, 142, 60)") 
-		if(greenBgExists) {
-			// make sure the answer was unique
-			if(correctAnswers.some(e => e == lastMessage)) return
-			// we answered correctly, so this is a new correct answer
-			correctAnswers.push(lastMessage)
-			// remove the todo
-			todos.finish("Answer a question")
-		}
 	})
 
 	const tryRefish = () => {
@@ -230,8 +218,6 @@
 	setInterval(function() {
 		if(!active) return
 		// send a random answer
-		let randomAnswer = correctAnswers[Math.floor(Math.random() * correctAnswers.length)]
-		if(randomAnswer) socket.send(randomAnswer)
 		if(sellMessage) socket.send(sellMessage)
 		if(autofishing) {
 			// fish for fish
