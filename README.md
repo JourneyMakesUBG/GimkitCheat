@@ -36,7 +36,7 @@ Chrome and Edge
 #### Tested browsers that do not support local overrides
 Firefox
 
-Overrides only work on certain browsers. If the browser you are using supports them, follow the following steps to set the one for  up.
+Overrides only work on certain browsers. If the browser you are using supports them, follow the following steps to set the one for Gimkit cheat up.
 
 1. Open the console (Ctrl+Shift+I)
 2. Click the "Sources" tab
