@@ -4,13 +4,21 @@
 
 When in a Gimkit game, open the console (Ctrl+Shift+I) and paste the code for your desired gamemode. Read below for more information for each gamemode.
 
+## Quick Patch
+
+Gimkit recently added an update that fixes the method this script used to cheat. A full patch is coming soon, but I've added another override to fix it for now. To use it, follow the steps below.
+
+1. Set up the override as described [below](#setting-up-an-override)
+2. Download [index.b6c0c7d8](/overrides/index.b6c0c7d8.js) and place it in the "www.gimkit.com" folder
+3. You're all set! Use as you otherwise would.
+
 ## Gamemodes
 
 Any gamemode specific script will pull up a hud to manage the script, which can be disabled by hitting shift 3 times.
 
 ### [General](/general.js)
 
-To run the general script, a local override must be set up. See below for instructions on various browsers. If you are using a browser that doesn't support local overrides, you can use the [v1 version of this script](/v1/general.js), which requires you answering all questions once before it works.
+To run the general script, a local override must be set up. See below for instructions on various browsers. If you are using a browser that doesn't support local overrides, you can use the [v1 version of this script](/v1/general.js), which requires that you all questions once before it works.
 
 Click [here](#setting-up-an-override) to see how to set up a local override.
 
