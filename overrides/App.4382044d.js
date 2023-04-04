@@ -19,7 +19,7 @@ console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
             if(!version) return
             if(script.includes(`version: "${version}"`)) return
             alert(`Gimkit Cheat Override v${version} is available! Some scripts may not run properly unless you update.
-            Instructions on how to update can be found here: https://github.com/TheLazySquid/GimkitCheat#updating-the-script`)
+            Instructions on how to update can be found here: https://github.com/TheLazySquid/GimkitCheat#updating-the-override`)
         })
     } catch (e) {
         // ignore errors
