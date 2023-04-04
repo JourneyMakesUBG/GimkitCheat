@@ -2,19 +2,13 @@
 
 ## Usage
 
-When in a Gimkit game, open the console (Ctrl+Shift+I) and paste the code for your desired gamemode. Read below for more information for each gamemode.
-
-## Quick Patch
-
-Gimkit recently added an update that fixes the method this script used to cheat. A full patch is coming soon, but I've added another override to fix it for now. To use it, follow the steps below.
-
-1. Set up the override as described [below](#setting-up-an-override)
-2. Download [index.b6c0c7d8](/overrides/index.b6c0c7d8.js) and place it in the "www.gimkit.com" folder
-3. You're all set! Use as you otherwise would.
+When in a Gimkit game, open the console (Ctrl+Shift+I) and paste the code for your desired gamemode after setting up an override. Read below for more information for each gamemode.
 
 ## Gamemodes
 
 Any gamemode specific script will pull up a hud to manage the script, which can be disabled by hitting shift 3 times.
+
+### All scripts now require a local override to be set up. Click [here](#setting-up-an-override) to see how to set up a local override.
 
 ### [General](/general.js)
 
@@ -29,6 +23,14 @@ Once run, it automatically answers questions every ~1 second.
 This should not be used in conjunction with the general script.
 
 The trick for classic is loosely based around a trick found in [non-reai's Gimkit hack](https://github.com/non-reai/Gimkit-Hacks) to answer questions, rather than manually storing and answering questions. It automatically answers questions and purchases upgrades, and all you should manually do is purchase and use powerups.
+
+### Quick Patch
+
+Gimkit recently added an update that fixes the method this script used to cheat. A full patch is coming soon, but I've added another override to fix it for now. To use it, follow the steps below.
+
+1. Set up the override as described [below](#setting-up-an-override)
+2. Download [index.b6c0c7d8](/overrides/index.b6c0c7d8.js) and place it in the "www.gimkit.com" folder
+3. You're all set! Use as you otherwise would.
 
 ### [Fishtopia](/gamemodes/fishtopia.js)
 

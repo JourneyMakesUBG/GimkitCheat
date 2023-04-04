@@ -1,5 +1,237 @@
-console.log("Gimkit Cheat Override v0.1.0 loaded!")
-window.test = "Test";
+window.gc = window.gc || {
+    // the current version of the script
+    version: "0.2.0"
+};
+
+console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
+
+(function() {
+    // check for an update to the script
+    try {
+        fetch("https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/overrides/App.4382044d.js")
+        // make sure the response is valid
+        .then(res => {
+            if(!res.ok) return null
+            return res.text()
+        })
+        // check if the version is different
+        .then(script => {        
+            if(!version) return
+            if(script.includes(`version: "${version}"`)) return
+            alert(`Gimkit Cheat Override v${version} is available! Some scripts may not run properly unless you update.
+            Instructions on how to update can be found here: https://github.com/TheLazySquid/GimkitCheat#updating-the-script`)
+        })
+    } catch (e) {
+        // ignore errors
+    }
+	// initalize standard stuff so multiple scripts can run simultaneously
+	class GCHud {
+		constructor() {
+			this.todos = []
+			
+            this.enabled = false
+
+			this.hud = document.createElement("div")
+			this.hud.classList.add("gc_hud")
+			this.hud.innerHTML = `
+				<div class="gc_todo_msg" style="display:none;">Please do the following:</div>
+			`
+			document.body.appendChild(this.hud)
+
+			// make the hud draggable
+			let drag = false
+			let dragX = 0
+			let dragY = 0
+			this.hud.addEventListener("mousedown", (e) => {
+				drag = true
+				dragX = e.clientX - this.hud.offsetLeft
+				dragY = e.clientY - this.hud.offsetTop
+			})
+			window.addEventListener("mouseup", () => drag = false)
+			window.addEventListener("mousemove", (e) => {
+				if(drag) {
+					this.hud.style.left = e.clientX - dragX + "px"
+					this.hud.style.top = e.clientY - dragY + "px"
+				}
+			})
+			
+			// make the hud toggleable with triple shift
+			let shiftCount = 0
+			let shiftTimeout = null
+			window.addEventListener("keydown", (e) => {
+                if(!this.enabled) return
+				if(e.key != "Shift") return;
+				shiftCount++
+				if(shiftTimeout) clearTimeout(shiftTimeout)
+				shiftTimeout = setTimeout(() => shiftCount = 0, 500)
+				if(shiftCount == 3) {
+					this.hud.style.display = this.hud.style.display == "none" ? "flex" : "none"
+					shiftCount = 0
+				}
+			})
+
+			// add stylesheets
+			let injectedCss = new CSSStyleSheet()
+			injectedCss.replaceSync(`
+			.gc_hud {
+				background-color: rgba(0, 0, 0, 0.5) !important;
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 300px;
+				height: 150px;
+				z-index: 999999999;
+				color: white;
+				font-size: 1rem;
+				font-family: Verdana, Geneva, Tahoma, sans-serif;
+				display: none;
+				flex-direction: column;
+				justify-content: space-around;
+				align-items: center;
+				margin: 1rem;
+				border-radius: 0.5rem;
+			}
+
+			.gc_hud button {
+				width: 100%;
+				height: 2rem;
+				margin: 0;
+				padding: 0;
+				background-color: rgba(0, 0, 0, 0.5);
+				border: none;
+				border-radius: 0.5rem;
+			}
+
+			.gc_hud button:hover {
+				border: 1px solid white;
+			}
+
+			.gc_todo .gc_todo_msg {
+				width: 100%;
+			}
+
+			.gc_drop_group {
+				display: flex;
+				flex-direction: row;
+				justify-content: space-between;
+				align-items: center;
+				width: 100%;
+			}
+
+			.gc_drop {
+				width: 60%;
+				height: 2rem;
+				margin: 0;
+				padding: 0;
+				background-color: rgba(0, 0, 0, 0.5);
+				color: white;
+				font-size: 1rem;
+				font-family: Verdana, Geneva, Tahoma, sans-serif;
+				border: none;
+				border-radius: 0.5rem;
+				margin: 0.35rem;
+			}
+			`)
+			document.adoptedStyleSheets = [injectedCss]			
+		}
+        enableHud() {
+            this.enabled = true
+            this.hud.style.display = "flex"
+        }
+        addBtn(text, callback) {
+            this.enableHud()
+            let btn = document.createElement("button")
+            btn.classList.add("gc_btn")
+            btn.innerHTML = text
+            btn.addEventListener("click", callback)
+            btn.addEventListener("keydown", (e) => {
+                e.preventDefault()
+            })
+            this.hud.appendChild(btn)
+        }
+		addToggleBtn(on, off, callback) {
+            this.enableHud()
+			let enabled = false
+			let btn = document.createElement("button")
+			btn.classList.add("gc_toggle")
+			btn.innerHTML = off
+			btn.addEventListener("click", function() {
+				enabled = !enabled
+				this.innerHTML = enabled ? on : off
+				callback(enabled)
+			})
+			btn.addEventListener("keydown", (e) => {
+				e.preventDefault()
+			})
+			this.hud.appendChild(btn)
+            return {
+				setEnabled: (bool) => {
+					enabled = bool
+					btn.innerHTML = enabled ? on : off
+					callback(enabled)
+				}
+			}
+		}
+		addTodo(text) {
+            this.enableHud()
+			this.todos.push(text)
+			let todo = document.createElement("div")
+			todo.classList.add("gc_todo")
+			todo.innerHTML = text
+			this.hud.querySelector(".gc_todo_msg").after(todo)
+			this.hud.querySelector(".gc_todo_msg").style.display = "block"
+		}
+		completeTodo(text) {
+			if(this.todos.indexOf(text) == -1) return
+			this.hud.querySelectorAll(".gc_todo").forEach((todo) => {
+				if(todo.innerHTML == text) {
+					todo.remove()
+				}
+			})
+			this.todos.splice(this.todos.indexOf(text), 1)
+			if(this.todos.length == 0) this.hud.querySelector(".gc_todo_msg").style.display = "none"
+		}
+		addDropButton(values, callback, btnMsg = "Go") {
+            this.enableHud()
+			let group = document.createElement("div")
+			group.classList.add("gc_drop_group")
+			let drop = document.createElement("select")
+			drop.classList.add("gc_drop")
+			values.forEach((value) => {
+				let option = document.createElement("option")
+				option.innerHTML = value
+				drop.appendChild(option)
+			})
+			group.appendChild(drop)
+			let btn = document.createElement("button")
+			btn.classList.add("gc_drop_btn")
+			btn.innerHTML = btnMsg
+			btn.addEventListener("click", () => callback(drop.value))
+			btn.addEventListener("keydown", (e) => {
+				e.preventDefault()
+			})
+			group.appendChild(btn)
+			this.hud.appendChild(group)
+			return {
+				addOption: (value) => {
+					let option = document.createElement("option")
+					option.innerHTML = value
+					drop.appendChild(option)
+				},
+				removeOption: (value) => {
+					drop.querySelectorAll("option").forEach((option) => {
+						if(option.innerHTML == value) option.remove()
+					})
+				}
+			}
+		}
+	}
+
+	if(!window.gc.hud) {
+		let hud = new GCHud()
+		window.gc.hud = hud
+	}
+})()
 
 var e = "undefined" != typeof globalThis ? globalThis : "undefined" != typeof self ? self : "undefined" != typeof window ? window : "undefined" != typeof global ? global : {};
 e.parcelRequire388b.register("kizyG", (function(t, n) {
@@ -284,23 +516,24 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
             var n = new w(e,t)
             , i = n._parse();
             // inserted code
-            if (typeof i === "string") {
-                try {
-                    let data = JSON.parse(i)
-                    if(data.changes) {
-                        let change = data.changes.find(c => {
-                            let data = c.changes?.values?.[1]
-                            return data?.includes?.("type") && data?.includes?.("isActive")
-                        })
-        
-                        if(change) {
-                            window.gcQuestions = JSON.parse(change.changes.values[1])
-                            console.log("Questions extracted! ", window.gcQuestions)
-                        }
-                    }
-                } catch(e) {
-                    // ignore it
+            try {
+                let data = i
+                if (typeof i === "string") {
+                    data = JSON.parse(i)
                 }
+                if(data.changes) {
+                    let change = data.changes.find(c => {
+                        let data = c.changes?.values?.[1]
+                        return data?.includes?.("type") && data?.includes?.("isActive")
+                    })
+    
+                    if(change) {
+                        window.gc.questions = JSON.parse(change.changes.values[1])
+                        console.log("Questions extracted! ", window.gc.questions)
+                    }
+                }
+            } catch(e) {
+                // ignore it
             }
             if (n._offset !== e.byteLength)
             throw new Error(e.byteLength - n._offset + " trailing bytes");
@@ -651,13 +884,30 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                 this.events = e
             }
             return e.prototype.send = function(e) {
-                e instanceof ArrayBuffer ? this.ws.send(e) : Array.isArray(e) && this.ws.send(new Uint8Array(e).buffer)
+                // edited code
+                let msg = e
+                if(Array.isArray(e)) msg = new Uint8Array(e).buffer
+                this.ws.send(msg)
+                if(this.ws.outgoingCallbacks) {
+                    for(let callback of this.ws.outgoingCallbacks) {
+                        callback(msg)
+                    }
+                }
             }
             ,
             e.prototype.connect = function(e) {
                 this.ws = new C(e,this.protocols),
+
                 // inserted code
-                window.gcSocket = this.ws
+                this.ws.outgoing = function(callback) {
+                    if(!this.outgoingCallbacks) {
+                        this.outgoingCallbacks = []
+                    }
+                    this.outgoingCallbacks.push(callback)
+                }
+
+                window.gc.socket = this.ws
+
                 this.ws.binaryType = "arraybuffer",
                 this.ws.onopen = this.events.onopen,
                 this.ws.onmessage = this.events.onmessage,
