@@ -1,4 +1,8 @@
 (function() {
+	if(!window.gc) return alert(`You need to set up the override to use this script. Find instructions here:
+	https://github.com/TheLazySquid/GimkitCheat#setting-up-the-overrides
+	If you have it set up, try reloading this page with the console open.`)
+
 	const upgradeOrder = [ // taken from https://github.com/Noble-Mushtak/Gimkit-Strategy/
 		["Streak Bonus", 2, 20],
 		["Money Per Question", 3, 100],
@@ -35,116 +39,29 @@
 	    return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset)
 	}
 
-	class TodoManager {
-		constructor(todos, hud, toReveal) {
-			this.todos = todos
-			this.hud = hud
-			this.toReveal = toReveal
-
-			let div = document.createElement("div")
-			div.innerHTML = "Please do the following"
-			this.hud.appendChild(div)
-
-			for(let todo of todos) {
-				let div = document.createElement("div")
-				div.innerHTML = todo
-				this.hud.appendChild(div)
-			}
-		}
-		finish(todo) {
-			let index = this.todos.indexOf(todo)
-			if(index == -1) return
-			this.todos.splice(index, 1)
-			let hudElement = Array.from(this.hud.children).find(e => e.innerHTML == todo)
-			hudElement.style.textDecoration = "line-through"
-			hudElement.style.textDecorationThickness = "2.5px"
-
-			if(this.todos.length == 0) {
-				this.hud.remove()
-				if(this.toReveal) this.toReveal.style.display = "block"
-			}
-		}
-	}
-
-	// initialize the cheat hud
-	const injectedCss = new CSSStyleSheet()
-	injectedCss.replaceSync(`
-		.gc_hud {
-			background-color: rgba(0, 0, 0, 0.5) !important;
-			position: absolute;
-			top: 0;
-			right: 0;
-			width: 300px;
-			height: 150px;
-			z-index: 999999999;
-			color: white;
-			font-size: 1rem;
-			font-family: Verdana, Geneva, Tahoma, sans-serif;
-			display: flex;
-			flex-direction: column;
-			justify-content: space-around;
-			align-items: center;
-			margin: 1rem;
-			border-radius: 0.5rem;
-		}
-		.gc_hud p {
-			margin: 0;
-			padding: 0;
-			text-align: center;
-		}
-		.gc_hud button {
-			width: 100%;
-			height: 2rem;
-			margin: 0;
-			padding: 0;
-			background-color: rgba(0, 0, 0, 0.5);
-			border: none;
-			border-radius: 0.5rem;
-		}
-		.gc_hud button:hover {
-			border: 1px solid white;
-		}
-	`)
-	document.adoptedStyleSheets = [injectedCss, ...document.adoptedStyleSheets]
-
-	let active = true;
-	let gcHud = document.createElement("div")
-	gcHud.classList.add("gc_hud")
-	gcHud.innerHTML = `
-		<p class="gc_todo"></p>
-		<p class="gc_info" style="display:none;">Automatically answering & buying</p>
-		<button class="gc_pause">Pause</button>
-	`
-	document.body.appendChild(gcHud)
-	let todos = new TodoManager(["Answer a question", "Purchase an upgrade"],
-	gcHud.querySelector(".gc_todo"), gcHud.querySelector(".gc_info"))
-
-	gcHud.querySelector(".gc_pause").addEventListener("click", function() {
-		active = !active
-		this.innerHTML = active ? "Pause" : "Resume"
-	})
-
-	let socket = null;
+	gc.hud.addTodo("Answer a question")
+	gc.hud.addTodo("Purchase an upgrade")	
+	
 	let lastMessage = null;
 	let purchaseMessage = null;
 	let correctAnswers = [];
+	let active = false;
 
-	let wsSend = WebSocket.prototype.send
-	WebSocket.prototype.send = function(data) {
-		if (socket == null) socket = this
-		// console.log("Prefix thingie: ", Array.from(new Uint8Array(data))[97])
-		window.socket = this
-		wsSend.call(this, data)
+	gc.hud.addToggleBtn("Pause", "Resume", (enabled) => {
+		active = enabled
+	})
+
+	gc.socket.outgoing(function(data) {
 		// decode the data from an ArrayBuffer to a string
 		let str = new TextDecoder("utf-8").decode(data)
 		if(str.includes("UPGRADE_PURCHASED")) {
 			purchaseMessage = data
-			todos.finish("Purchase an upgrade")
+			gc.hud.completeTodo("Purchase an upgrade")
 		}
 		if(str.toLowerCase().includes("answered")) {
 			lastMessage = data
 		}
-	}
+	})
 
 	let observer = new MutationObserver(function() {
 		let greenBgExists = Array.from(document.querySelectorAll("div")).some(e => getComputedStyle(e).backgroundColor == "rgb(56, 142, 60)") 
@@ -153,7 +70,7 @@
 			if(correctAnswers.some(e => e == lastMessage)) return
 			// we answered correctly, so this is a new correct answer
 			correctAnswers.push(lastMessage)
-			todos.finish("Answer a question")
+			gc.hud.completeTodo("Answer a question")
 		}
 		// attempt to purchase upgrades
 		let moneyElement = document.querySelector(".sc-gSyvRN.keOSAu > div > div > div > div")
@@ -176,7 +93,7 @@
 					let levelIndex = text.indexOf("level") + 5
 					arr[levelIndex] = upgrade[1]
 					// dispatch the event
-					socket.send(u8tobuff(new Uint8Array(arr)))
+					gc.socket.send(u8tobuff(new Uint8Array(arr)))
 					console.log("Purchased upgrade", upgrade[0], "at level", upgrade[1])
 					// remove the upgrade from the list
 					upgradeOrder.splice(upgradeOrder.indexOf(upgrade), 1)
@@ -198,24 +115,9 @@
 		if(!active) return
 		// send a random answer
 		let randomAnswer = correctAnswers[Math.floor(Math.random() * correctAnswers.length)]
-		if(randomAnswer) socket.send(randomAnswer)
+		if(randomAnswer) gc.socket.send(randomAnswer)
 	}
 	answerQuestion()
 
-	// triple shift to hide the hud
-	let shiftCount = 0
-	let shiftTimeout = null
-	document.addEventListener("keydown", function(e) {
-		if(e.key == "Shift") {
-			shiftCount++
-			if(shiftTimeout) clearTimeout(shiftTimeout)
-			shiftTimeout = setTimeout(function() {
-				shiftCount = 0
-			}, 500)
-			if(shiftCount == 3) {
-				gcHud.style.display = gcHud.style.display == "none" ? "flex" : "none"
-			}
-		}
-	})
 	console.log("Gimkit Cheat Loaded")
 })();
