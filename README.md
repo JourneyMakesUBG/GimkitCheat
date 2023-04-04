@@ -24,7 +24,7 @@ The trick for classic is loosely based around a trick found in [non-reai's Gimki
 
 This should be used in conjunction with the general script.
 
-Automatically answers questions, sells fish without being at the sell station, and allows you to fish without being at water. After using a "travel to..." thing (such as the travel to purple pond boat), you will be able to permanently use it from anywhere.
+This script allows you to sell fish without being at the sell station and fish anywhere without being at water. Additionally, after using a "travel to..." thing (such as the travel to purple pond boat), you will be able to permanently use it from anywhere.
 
 ## Setting up the overrides
 
