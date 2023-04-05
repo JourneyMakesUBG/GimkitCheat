@@ -7,7 +7,7 @@ console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
 (function() {
     // check for an update to the script
     try {
-        fetch("https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/overrides/play.ad2d488e.js")
+        fetch("https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/main/overrides/play.ad2d488e.js")
         // make sure the response is valid
         .then(res => {
             if(!res.ok) return null

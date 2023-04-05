@@ -26,6 +26,12 @@ This should be used in conjunction with the general script.
 
 This script allows you to sell fish without being at the sell station and fish anywhere without being at water. Additionally, after using a "travel to..." thing (such as the travel to purple pond boat), you will be able to permanently use it from anywhere.
 
+### [One Way Out](/gamemodes/one-way-out.js)
+
+This should be used in conjunction with the general script.
+
+For now, this script is pretty bare-bones. All it does is allow you to buy shield cans and medkits from anywhere. More features may be added in the future.
+
 ## Setting up the overrides
 
 #### Tested browsers that support local overrides
