@@ -52,7 +52,7 @@
 					// update the fast travel menu
 					if(fastTravelMenu) fastTravelMenu.addOption(lastTravelPos)
 					else {
-						fastTravelMenu = gc.hud.addDropButton(Array.from(quickTravel.keys()), (pos) => {
+						fastTravelMenu = gc.hud.addDropdownButton(Array.from(quickTravel.keys()), "Travel", (pos) => {
 							gc.socket.send(quickTravel.get(pos))
 						}, "Travel")
 					}

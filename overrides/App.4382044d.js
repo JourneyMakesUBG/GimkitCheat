@@ -1,6 +1,6 @@
 window.gc = window.gc || {
     // the current version of the script
-    version: "0.2.1"
+    version: "0.2.2"
 };
 
 console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
@@ -292,13 +292,13 @@ console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
 			return this.rootGroup.addText(text)
 		}
 
-		addToggleBtn(text, callback) {
-			return this.rootGroup.addToggleBtn(text, callback)
-		}
-
 		addToggleBtn(enabledText, disabledText, callback, startEnabled) {
 			return this.rootGroup.addToggleBtn(enabledText, disabledText, callback, startEnabled)
 		}
+
+        addDropdownButton(options, buttonText, callback) {
+            return this.rootGroup.addDropdownButton(options, buttonText, callback)
+        }
 
 		addInput(text, callback) {
 			return this.rootGroup.addInput(text, callback)
