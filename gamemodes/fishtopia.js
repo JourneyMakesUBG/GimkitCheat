@@ -62,7 +62,7 @@
 
 	let observer = new MutationObserver(function() {
 		// check if a menu is going to be opened
-		let menu = document.querySelector(".sc-gOrOjh.grGntV")
+		let menu = document.querySelector('img[src*="/assets/map/others/enter.svg"] + div > div')
 		if(menu) {
 			if(menu.innerHTML.includes("Cast Fishing Rod")) lastMenu = "fishing"
 			else if(menu.innerHTML.includes("Sell Fish")) lastMenu = "selling"
