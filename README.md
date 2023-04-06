@@ -32,6 +32,12 @@ This should be used in conjunction with the general script.
 
 For now, this script is pretty bare-bones. All it does is allow you to buy shield cans and medkits from anywhere. More features may be added in the future.
 
+### [Farmchain](/gamemodes/farmchain.js)
+
+This should be used in conjunction with the general script.
+
+This script allows you to sell crops, get water, buy plants and harvest from anywhere. You need to harvest a plot once before it will be auto-harvested in the future.
+
 ## Setting up the overrides
 
 #### Tested browsers that support local overrides
