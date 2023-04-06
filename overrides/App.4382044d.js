@@ -1,6 +1,6 @@
 window.gc = window.gc || {
     // the current version of the script
-    version: "0.2.0"
+    version: "0.2.1"
 };
 
 console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
@@ -27,17 +27,22 @@ console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
 	// initalize standard stuff so multiple scripts can run simultaneously
 	class GCHud {
 		constructor() {
-			this.todos = []
-			
-            this.enabled = false
-
+            // add the hud to the page
 			this.hud = document.createElement("div")
 			this.hud.classList.add("gc_hud")
 			this.hud.innerHTML = `
-				<div class="gc_todo_msg" style="display:none;">Please do the following:</div>
+				<div class="gc_todo" style="display: none;">
+					<div class="gc_text">Please do the following:</div>
+				</div>
+				<div class="gc_groups"></div>
 			`
 			document.body.appendChild(this.hud)
-
+			
+			this.rootGroup = new HudGroup("root", this)
+			
+            this.enabled = false
+			this.todos = []
+			
 			// make the hud draggable
 			let drag = false
 			let dragX = 0
@@ -86,39 +91,67 @@ console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
 				font-family: Verdana, Geneva, Tahoma, sans-serif;
 				display: none;
 				flex-direction: column;
-				justify-content: space-around;
 				align-items: center;
 				margin: 1rem;
 				border-radius: 0.5rem;
+				overflow-x: hidden;
+				overflow-y: auto;
 			}
-
-			.gc_hud button {
+			
+			.gc_group {
+				margin: 0px;
+				padding: 0px;
+				width: 100%;
+				height: 100%;
+				position: absolute;
+				top: 0;
+				left: 0;
+			}
+			
+			.gc_btn {
 				width: 100%;
 				height: 2rem;
 				margin: 0;
 				padding: 0;
 				background-color: rgba(0, 0, 0, 0.5);
+				color: white;
 				border: none;
 				border-radius: 0.5rem;
 			}
-
-			.gc_hud button:hover {
+			
+			.gc_btn:hover {
 				border: 1px solid white;
 			}
-
-			.gc_todo .gc_todo_msg {
-				width: 100%;
+			
+			.gc_group_opener {
+				color: white;
+				font-family: Verdana, Geneva, Tahoma, sans-serif;
+				padding-left: 1rem;
+				padding-right: 1rem;
 			}
-
-			.gc_drop_group {
+			
+			.gc_left {
+				float: left;
+			}
+			
+			.gc_right {
+				float: right;
+			}
+			
+			.gc_text {
+				width: 100%;
+				text-align: center;
+			}
+			
+			.gc_dropdown {
 				display: flex;
 				flex-direction: row;
 				justify-content: space-between;
 				align-items: center;
 				width: 100%;
 			}
-
-			.gc_drop {
+			
+			.gc_dropdown select {
 				width: 60%;
 				height: 2rem;
 				margin: 0;
@@ -131,99 +164,395 @@ console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
 				border-radius: 0.5rem;
 				margin: 0.35rem;
 			}
+			
+			input.gc_input {
+				width: 100%;
+				height: 2rem;
+				margin: 0;
+				padding: 0;
+				background-color: rgba(0, 0, 0, 0.5);
+				color: white;
+				font-size: 1rem;
+				font-family: Verdana, Geneva, Tahoma, sans-serif;
+				border: none;
+				border-radius: 0.5rem;
+			}
+			
+			.gc_groups {
+				position: relative;
+				width: 100%;
+			}
+			
+			@keyframes gc_slide_out_left {
+				0% {
+					transform: translateX(0);
+					opacity: 1;
+					pointer-events: all;
+				}
+			
+				100% {
+					transform: translateX(-100%);
+					opacity: 0;
+					pointer-events: none;
+				}
+			}
+			
+			@keyframes gc_slide_out_right {
+				0% {
+					transform: translateX(0);
+					opacity: 1;
+					pointer-events: all;
+				}
+			
+				100% {
+					transform: translateX(100%);
+					opacity: 0;
+					pointer-events: none;
+				}
+			}
+			
+			@keyframes gc_slide_in_left {
+				0% {
+					transform: translateX(-100%);
+					opacity: 0;
+					pointer-events: none;
+				}
+			
+				100% {
+					transform: translateX(0);
+					opacity: 1;
+					pointer-events: all;
+				}
+			}
+			
+			@keyframes gc_slide_in_right {
+				0% {
+					transform: translateX(100%);
+					opacity: 0;
+					pointer-events: none;
+				}
+			
+				100% {
+					transform: translateX(0);
+					opacity: 1;
+					pointer-events: all;
+				}
+			}
+			
+			@keyframes gc_idle {}
+			@keyframes gc_hidden {
+				0% {
+					opacity: 1;
+					pointer-events: all;
+				}
+			
+				100% {
+					opacity: 0;
+					pointer-events: none;
+				}
+			}
 			`)
 			document.adoptedStyleSheets = [injectedCss]			
 		}
-        enableHud() {
-            this.enabled = true
-            this.hud.style.display = "flex"
-        }
-        addBtn(text, callback) {
-            this.enableHud()
-            let btn = document.createElement("button")
-            btn.classList.add("gc_btn")
-            btn.innerHTML = text
-            btn.addEventListener("click", callback)
-            btn.addEventListener("keydown", (e) => {
-                e.preventDefault()
-            })
-            this.hud.appendChild(btn)
-        }
-		addToggleBtn(on, off, callback) {
-            this.enableHud()
-			let enabled = false
-			let btn = document.createElement("button")
-			btn.classList.add("gc_toggle")
-			btn.innerHTML = off
-			btn.addEventListener("click", function() {
-				enabled = !enabled
-				this.innerHTML = enabled ? on : off
-				callback(enabled)
-			})
-			btn.addEventListener("keydown", (e) => {
-				e.preventDefault()
-			})
-			this.hud.appendChild(btn)
-            return {
-				setEnabled: (bool) => {
-					enabled = bool
-					btn.innerHTML = enabled ? on : off
-					callback(enabled)
-				}
-			}
-		}
+
 		addTodo(text) {
-            this.enableHud()
+			this.enable()
+			this.hud.querySelector(".gc_todo").style.display = "block"
+			this.hud.querySelector(".gc_todo").innerHTML += `<div class="gc_text gc_todo_option">${text}</div>`
 			this.todos.push(text)
-			let todo = document.createElement("div")
-			todo.classList.add("gc_todo")
-			todo.innerHTML = text
-			this.hud.querySelector(".gc_todo_msg").after(todo)
-			this.hud.querySelector(".gc_todo_msg").style.display = "block"
 		}
+
 		completeTodo(text) {
-			if(this.todos.indexOf(text) == -1) return
-			this.hud.querySelectorAll(".gc_todo").forEach((todo) => {
-				if(todo.innerHTML == text) {
-					todo.remove()
-				}
+			if(!this.todos.includes(text)) return
+			this.hud.querySelectorAll(".gc_todo_option").forEach(el => {
+				if(el.innerHTML == text) el.remove()
 			})
 			this.todos.splice(this.todos.indexOf(text), 1)
-			if(this.todos.length == 0) this.hud.querySelector(".gc_todo_msg").style.display = "none"
+			if(this.todos.length == 0) this.hud.querySelector(".gc_todo").style.display = "none"
 		}
-		addDropButton(values, callback, btnMsg = "Go") {
-            this.enableHud()
-			let group = document.createElement("div")
-			group.classList.add("gc_drop_group")
-			let drop = document.createElement("select")
-			drop.classList.add("gc_drop")
-			values.forEach((value) => {
-				let option = document.createElement("option")
-				option.innerHTML = value
-				drop.appendChild(option)
-			})
-			group.appendChild(drop)
-			let btn = document.createElement("button")
-			btn.classList.add("gc_drop_btn")
-			btn.innerHTML = btnMsg
-			btn.addEventListener("click", () => callback(drop.value))
-			btn.addEventListener("keydown", (e) => {
-				e.preventDefault()
-			})
-			group.appendChild(btn)
-			this.hud.appendChild(group)
-			return {
-				addOption: (value) => {
-					let option = document.createElement("option")
-					option.innerHTML = value
-					drop.appendChild(option)
-				},
-				removeOption: (value) => {
-					drop.querySelectorAll("option").forEach((option) => {
-						if(option.innerHTML == value) option.remove()
-					})
-				}
+
+		enable() {
+			this.hud.style.display = "flex"
+			this.enabled = true
+		}
+
+        createGroup(name) {
+			return this.rootGroup.createGroup(name)
+		}
+
+		group(name) {
+			return this.rootGroup.group(name)
+		}
+
+		addBtn(text, callback) {
+			return this.rootGroup.addBtn(text, callback)
+		}
+
+		addText(text) {
+			return this.rootGroup.addText(text)
+		}
+
+		addToggleBtn(text, callback) {
+			return this.rootGroup.addToggleBtn(text, callback)
+		}
+
+		addToggleBtn(enabledText, disabledText, callback, startEnabled) {
+			return this.rootGroup.addToggleBtn(enabledText, disabledText, callback, startEnabled)
+		}
+
+		addInput(text, callback) {
+			return this.rootGroup.addInput(text, callback)
+		}
+	}
+
+    class HudGroup {
+        constructor(name, hud, parentGroup) {
+            this.name = name
+			this.hud = hud
+			this.parentGroup = parentGroup
+            this.elements = []
+
+			this.subGroups = {}
+
+			this.element = document.createElement("div")
+			this.element.classList.add("gc_group")
+
+			if(name != "root") {
+				this.element.style.animation = "gc_hidden 0s both"
+				// add the button to go back one group
+				let backBtn = document.createElement("button")
+				backBtn.classList.add("gc_back_btn")
+				backBtn.innerHTML = "< Back"
+				backBtn.classList.add("gc_btn")
+				backBtn.addEventListener("click", () => {
+					this.slide("out", "right")
+					this.parentGroup.slide("in", "left")
+				})
+				this.element.appendChild(backBtn)
 			}
+
+			this.hud.hud.querySelector(".gc_groups").appendChild(this.element)
+        }
+
+		createGroup(name) {
+			if(name in this.subGroups) return this.subGroups[name]
+			let group = new HudGroup(name, this.hud, this)
+			this.subGroups[name] = group
+
+			let opener = new GroupOpener(name, this, group)
+			this.elements.push(opener)
+			this.element.appendChild(opener.element)
+
+			return group
+		}
+
+		group(name) {
+			return this.subGroups[name] ?? null
+		}
+
+		addBtn(text, callback) {
+			this.hud.enable()
+			let button = new Button(text, callback, this)
+			this.elements.push(button)
+			this.element.appendChild(button.element)
+			return button
+		}
+
+		addText(text) {
+			this.hud.enable()
+			let textElement = new Text(text, this)
+			this.elements.push(textElement)
+			this.element.appendChild(textElement.element)
+			return textElement
+		}
+
+		addToggleBtn(enabledText, disabledText, callback, startEnabled) {
+			this.hud.enable()
+			let button = new ToggleButton(enabledText, disabledText, callback, startEnabled ?? false, this)
+			this.elements.push(button)
+			this.element.appendChild(button.element)
+			return button
+		}
+
+		addDropdownButton(options, buttonText, callback) {
+			this.hud.enable()
+			let button = new DropdownButton(options, buttonText, callback, this)
+			this.elements.push(button)
+			this.element.appendChild(button.element)
+			return button
+		}
+
+		addInput(text, callback) {
+			this.hud.enable()
+			let input = new Input(text, callback, this)
+			this.elements.push(input)
+			this.element.appendChild(input.element)
+			return input
+		}
+
+		slide(mode, direction) {
+			this.element.style.animation = `gc_slide_${mode}_${direction} both 0.5s`
+		}
+    }
+
+	class HudElement {
+		constructor(element, type, group) {
+			this.element = element
+			this.type = type
+			this.group = group
+		}
+		remove() {
+			this.element.remove()
+			this.group.elements.splice(this.group.elements.indexOf(this), 1)
+		}
+	}
+
+	class Button extends HudElement {
+		constructor(text, callback, group) {
+			let element = document.createElement("button")
+			element.classList.add("gc_btn")
+			element.innerHTML = text
+			element.addEventListener("click", callback)
+			element.addEventListener("keydown", (e) => e.preventDefault())
+
+			super(element, "button", group)
+		}
+		setEnabled(bool) {
+			this.element.disabled = !bool
+		}
+		setText(text) {
+			this.element.innerHTML = text
+		}
+	}
+
+	class Text extends HudElement {
+		constructor(text, group) {
+			let element = document.createElement("div")
+			element.classList.add("gc_text")
+			element.innerHTML = text
+
+			super(element, "text", group)
+		}
+		setText(text) {
+			this.element.innerHTML = text
+		}
+	}
+
+	class ToggleButton extends HudElement {
+		constructor(textEnabled, textDisabled, callback, startEnabled, group) {
+			let element = document.createElement("button")
+			element.classList.add("gc_btn")
+			element.addEventListener("keydown", (e) => e.preventDefault())
+
+			super(element, "toggle_button", group)
+
+			this.enabled = startEnabled
+			this.element.innerHTML = this.enabled ? textEnabled : textDisabled
+
+			element.addEventListener("click", () => {
+				this.enabled = !this.enabled
+				this.element.innerHTML = this.enabled ? textEnabled : textDisabled
+				callback(this.enabled)
+			})
+		}
+
+		setEnabled(bool) {
+			this.enabled = bool
+			this.element.innerHTML = this.enabled ? textEnabled : textDisabled
+		}
+	}
+
+	class DropdownButton extends HudElement {
+		constructor(options, buttonText, callback, group) {
+			let element = document.createElement("div")
+			element.classList.add("gc_dropdown")
+			element.innerHTML = `
+				<select>
+					${options.map(option => `<option value="${option}">${option}</option>`).join("")}
+				</select>
+				<button class="gc_btn">${buttonText}</button>
+			`
+			element.querySelector("button").addEventListener("click", () => {
+				callback(element.querySelector("select").value)
+			})
+			element.querySelector("button").addEventListener("keydown", (e) => e.preventDefault())
+			
+			super(element, "dropdown_button", group)
+		}
+
+		setEnabled(bool) {
+			this.element.querySelector("button").disabled = !bool
+		}
+
+		setText(text) {
+			this.element.querySelector("button").innerHTML = text
+		}
+
+		addOption(option) {
+			let select = this.element.querySelector("select")
+			select.innerHTML += `<option value="${option}">${option}</option>`
+		}
+
+		removeOption(option) {
+			let select = this.element.querySelector("select")
+			select.querySelector(`option[value="${option}"]`).remove()
+		}
+
+		setOptions(options) {
+			let select = this.element.querySelector("select")
+			select.innerHTML = options.map(option => `<option value="${option}">${option}</option>`).join("")
+		}
+
+		setSelected(option) {
+			let select = this.element.querySelector("select")
+			select.value = option
+		}
+	}
+
+	class GroupOpener extends HudElement {
+		constructor(text, group, groupToOpen) {
+			let element = document.createElement("button")
+			element.classList.add("gc_btn")
+			element.classList.add("gc_group_opener")
+			element.addEventListener("keydown", (e) => e.preventDefault())
+			element.innerHTML = `
+				<div class="gc_left">${text}</div>
+				<div class="gc_right">></div>
+			`
+			element.classList.add("gc_group_opener")
+			element.addEventListener("click", () => {
+				group.slide("out", "left")
+				groupToOpen.slide("in", "right")
+				// scroll to top
+				// groupToOpen.element.scrollIntoView({behavior: "smooth", block: "start"})
+			})
+			
+			super(element, "group_opener", group)
+		}
+	}
+
+	class Input extends HudElement {
+		constructor(text, callback, group) {
+			let element = document.createElement("input")
+			element.classList.add("gc_input")
+			element.value = text
+			element.addEventListener("change", () => {
+				callback(element.value)
+			})
+			
+			super(element, "input", group)
+		}
+
+		get value() {
+			return this.element.value
+		}
+
+		setEnabled(bool) {
+			this.element.disabled = !bool
+		}
+
+		setText(text) {
+			this.element.value = text
 		}
 	}
 
@@ -522,15 +851,26 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                     data = JSON.parse(i)
                 }
                 if(data.changes) {
-                    let change = data.changes.find(c => {
+					// check if we can find the questions
+                    let questionChange = data.changes.find(c => {
                         let data = c.changes?.values?.[1]
                         return data?.includes?.("type") && data?.includes?.("isActive")
                     })
     
-                    if(change) {
-                        window.gc.questions = JSON.parse(change.changes.values[1])
+                    if(questionChange) {
+                        window.gc.questions = JSON.parse(questionChange.changes.values[1])
                         console.log("Questions extracted! ", window.gc.questions)
                     }
+
+					// check if the active question has been updated
+					for(let change of data.changes) {
+						for(let i = 0; i < change.changes.keys.length; i++) {
+							let key = change.changes.keys[i]
+							if(key.includes("currentQuestionId")) {
+								window.gc.currentQuestionId = change.changes.values[i]
+							}
+						}
+					}
                 }
             } catch(e) {
                 // ignore it

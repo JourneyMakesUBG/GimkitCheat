@@ -23,23 +23,19 @@
 		const arr = Array.from(u8arr);
 
 		console.log(text)
-		
-		const correctIDs = gc.questions.map(q => q.answers.find(a => a.correct)._id)
-		let index = 0
-		
+					
 		const startIndex = text.lastIndexOf("answer") + 7
 		
-		// TODO: Rather than spam every answer and pray, send the correct answer
 		setInterval(() => {
 			if(!active) return
 			// replace everything after the startIndex with a random correct answer
-			const id = correctIDs[index % correctIDs.length]
-			const bytes = new TextEncoder().encode(id)
+			const question = gc.questions.find(q => q._id == gc.currentQuestionId)
+			const answerId = question.answers.find(a => a.correct)._id
+			const bytes = new TextEncoder().encode(answerId)
 			arr.splice(startIndex, arr.length - startIndex, ...bytes)
 			
 			if(gc.socket) gc.socket.send(u8tobuff(new Uint8Array(arr)))
-			index++
-		}, 1000 / correctIDs.length)
+		}, 1000)
 	})
 
 	function u8tobuff(array) {
