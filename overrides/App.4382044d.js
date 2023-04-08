@@ -1,6 +1,6 @@
 window.gc = window.gc || {
     // the current version of the script
-    version: "0.2.2"
+    version: "0.2.3"
 };
 
 console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
@@ -850,6 +850,11 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                 if (typeof i === "string") {
                     data = JSON.parse(i)
                 }
+                if(window.gc.socket.stateChangeCallbacks) {
+                    for(let callback of window.gc.socket.stateChangeCallbacks) {
+                        callback(data)
+                    }
+                }
                 if(data.changes) {
 					// check if we can find the questions
                     let questionChange
@@ -868,12 +873,14 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
 
 					// check if the active question has been updated
 					for(let change of data.changes) {
-						for(let i = 0; i < change.changes.keys.length; i++) {
-							let key = change.changes.keys[i]
-							if(key.includes("currentQuestionId")) {
-								window.gc.currentQuestionId = change.changes.values[i]
-							}
-						}
+                        let values = change?.changes?.values ?? change[2]
+                        if(!values) continue
+                        // check if it's a question
+                        for(let question of window.gc.questions) {
+                            if(question._id != values?.[0]) continue
+                            window.gc.currentQuestionId = question._id
+                            console.log("Current question updated! ", question)
+                        }
 					}
                 }
             } catch(e) {
@@ -1248,6 +1255,12 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                         this.outgoingCallbacks = []
                     }
                     this.outgoingCallbacks.push(callback)
+                }
+                this.ws.onStateChange = function(callback) {
+                    if(!this.stateChangeCallbacks) {
+                        this.stateChangeCallbacks = []
+                    }
+                    this.stateChangeCallbacks.push(callback)
                 }
 
                 window.gc.socket = this.ws
