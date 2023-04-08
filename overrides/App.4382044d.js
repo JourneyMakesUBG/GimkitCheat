@@ -45,16 +45,23 @@ console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
 			
 			// make the hud draggable
 			let drag = false
+            let draggedEnough = false
 			let dragX = 0
 			let dragY = 0
+            let dragStartX = 0
+            let dragStartY = 0
 			this.hud.addEventListener("mousedown", (e) => {
 				drag = true
+                draggedEnough = false
 				dragX = e.clientX - this.hud.offsetLeft
 				dragY = e.clientY - this.hud.offsetTop
+                dragStartX = e.clientX
+                dragStartY = e.clientY
 			})
 			window.addEventListener("mouseup", () => drag = false)
 			window.addEventListener("mousemove", (e) => {
-				if(drag) {
+                if(Math.abs(e.clientX - dragStartX) > 10 || Math.abs(e.clientY - dragStartY) > 10) draggedEnough = true
+				if(drag && draggedEnough) {
 					this.hud.style.left = e.clientX - dragX + "px"
 					this.hud.style.top = e.clientY - dragY + "px"
 				}
@@ -856,32 +863,29 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                     }
                 }
                 if(data.changes) {
-					// check if we can find the questions
-                    let questionChange
-					for(let change of data.changes) {
-						let data = change?.changes?.values?.[1] ?? change[2][1]
-						if(data?.includes?.("type") && data?.includes?.("isActive")) {
-							questionChange = data
-							break
-						}
-					}
+                    for(let change of data.changes) {
+                        let keys = change[1].map(index => data.values[index])
+                        
+                        // check if we can find the questions
+						for(let i = 0; i < keys.length; i++) {
+                            let key = keys[i]
+                            if(key == "GLOBAL_questions") {
+                                let questions = change[2][i]
+                                window.gc.questions = JSON.parse(questions)
+                                console.log("Quesitons extracted!", window.gc.questions)
+                            }
+                        }
 
-					if(questionChange) {
-                        window.gc.questions = JSON.parse(questionChange)
-                        console.log("Questions extracted! ", window.gc.questions)
-                    }
-
-					// check if the active question has been updated
-					for(let change of data.changes) {
-                        let values = change?.changes?.values ?? change[2]
-                        if(!values) continue
-                        // check if it's a question
-                        for(let question of window.gc.questions) {
-                            if(question._id != values?.[0]) continue
-                            window.gc.currentQuestionId = question._id
-                            console.log("Current question updated! ", question)
+                        // check if the active question has been updated
+                        for(let i = 0; i < keys.length; i++) {
+                            let key = keys[i]
+                            if(key.includes("currentQuestionId")) {
+                                let questionId = change[2][i]
+                                window.gc.currentQuestionId = questionId
+                            }
                         }
 					}
+
                 }
             } catch(e) {
                 // ignore it
