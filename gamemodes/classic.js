@@ -73,7 +73,7 @@
 			gc.hud.completeTodo("Answer a question")
 		}
 		// attempt to purchase upgrades
-		let moneyElement = document.querySelector(".sc-gSyvRN.keOSAu > div > div > div > div")
+		let moneyElement = document.querySelector(".MuiButtonBase-root.MuiIconButton-root ~ div > div > div > div")
 		if(moneyElement && purchaseMessage && active) {
 			let money = moneyElement.innerHTML.replace("$", "").replaceAll(",", "")
 			for(let upgrade of upgradeOrder) {
