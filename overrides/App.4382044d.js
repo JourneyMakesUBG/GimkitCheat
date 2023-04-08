@@ -852,13 +852,17 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                 }
                 if(data.changes) {
 					// check if we can find the questions
-                    let questionChange = data.changes.find(c => {
-                        let data = c.changes?.values?.[1]
-                        return data?.includes?.("type") && data?.includes?.("isActive")
-                    })
-    
-                    if(questionChange) {
-                        window.gc.questions = JSON.parse(questionChange.changes.values[1])
+                    let questionChange
+					for(let change of data.changes) {
+						let data = change?.changes?.values?.[1] ?? change[2][1]
+						if(data?.includes?.("type") && data?.includes?.("isActive")) {
+							questionChange = data
+							break
+						}
+					}
+
+					if(questionChange) {
+                        window.gc.questions = JSON.parse(questionChange)
                         console.log("Questions extracted! ", window.gc.questions)
                     }
 
