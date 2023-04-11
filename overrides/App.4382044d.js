@@ -1,28 +1,81 @@
-window.gc = window.gc || {
-    // the current version of the script
-    version: "0.2.3"
-};
-
-console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
-
 (function() {
-    // check for an update to the script
-    try {
-        fetch("https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/main/overrides/App.4382044d.js")
-        // make sure the response is valid
-        .then(res => {
-            if(!res.ok) return null
-            return res.text()
-        })
-        // check if the version is different
-        .then(script => {        
-            if(!script) return
-            if(script.includes(`version: "${gc.version}"`)) return
-            alert(`A new version of Gimkit Cheat Override is available! Some scripts may not run properly unless you update.
-            Instructions on how to update can be found here: https://github.com/TheLazySquid/GimkitCheat#updating-the-script`)
-        })
-    } catch (e) {
-        // ignore errors
+    class Cheat {
+        constructor() {
+            this.hud = new GCHud()
+            this.version = "0.2.4"
+            this.dev = true;
+            
+            this.loadCallbacks = []
+            this.socket = null
+            this.data = {}
+
+            console.log(`Gimkit Cheat Override v${this.version} loaded!`);
+
+            // check for an update to the script
+            try {
+                if (this.dev) return
+                fetch("https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/main/overrides/App.4382044d.js")
+                // make sure the response is valid
+                .then(res => {
+                    if(!res.ok) return null
+                    return res.text()
+                })
+                // check if the version is different
+                .then(script => {        
+                    if(!script) return
+                    if(script.includes(`version = "${gc.version}"`)) return
+                    alert(`A new version of Gimkit Cheat Override is available! Some scripts may not run properly unless you update.
+                    Instructions on how to update can be found here: https://github.com/TheLazySquid/GimkitCheat#updating-the-script`)
+                })
+            } catch (e) {}
+        }
+
+        setSocket(socket) {
+            this.socket = socket
+            this.loadCallbacks.forEach(cb => cb())
+        }
+
+        addEventListener(event, callback) {
+            switch(event) {
+                case "load":
+                    this.loadCallbacks.push(callback)
+                    break
+            }
+        }
+
+        setDevices(devices) {
+            let devicesFixed = devices.addedDevices.devices.map(d => {
+                let obj = {
+                    id: d[0],
+                    data: {}
+                }
+                for(let val of d[6]) {
+                    let key1 = devices.addedDevices.values[val[0]];
+                    let key2 = devices.addedDevices.values[val[1]];
+                    obj.data[key1] = key2;
+                }
+                return obj
+            })
+
+            this.data.devices = devicesFixed
+        }
+
+        getDevices(criteria) {
+            if(!this.data.devices) return null
+            let devices = this.data.devices
+            devices = devices.filter(d => {
+                if(criteria?.id) {
+                    if(d.id != criteria.id) return false
+                }
+                if(criteria?.mustHave) {
+                    for(let key in criteria.mustHave) {
+                        if(d.data[key] != criteria.mustHave[key]) return false
+                    }
+                }
+                return true
+            })
+            return devices
+        }
     }
 	// initalize standard stuff so multiple scripts can run simultaneously
 	class GCHud {
@@ -563,10 +616,7 @@ console.log(`Gimkit Cheat Override v${gc.version} loaded!`);
 		}
 	}
 
-	if(!window.gc.hud) {
-		let hud = new GCHud()
-		window.gc.hud = hud
-	}
+    window.gc = new Cheat()
 })()
 
 var e = "undefined" != typeof globalThis ? globalThis : "undefined" != typeof self ? self : "undefined" != typeof window ? window : "undefined" != typeof global ? global : {};
@@ -857,12 +907,13 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                 if (typeof i === "string") {
                     data = JSON.parse(i)
                 }
-                if(window.gc.socket.stateChangeCallbacks) {
-                    for(let callback of window.gc.socket.stateChangeCallbacks) {
-                        callback(data)
-                    }
+                for(let callback of window.gc.socket.stateChangeCallbacks) {
+                    callback(data)
                 }
-                if(data.changes) {
+                if(data.devices) {
+                    window.gc.setDevices(data.devices)
+                }
+                else if(data.changes) {
                     for(let change of data.changes) {
                         let keys = change[1].map(index => data.values[index])
                         
@@ -871,8 +922,10 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                             let key = keys[i]
                             if(key == "GLOBAL_questions") {
                                 let questions = change[2][i]
-                                window.gc.questions = JSON.parse(questions)
-                                console.log("Quesitons extracted!", window.gc.questions)
+                                window.gc.data.questions = JSON.parse(questions)
+                                console.log("Quesitons extracted!", window.gc.data.questions)
+
+                                window.gc.data.questionDeviceId = change[0]
                             }
                         }
 
@@ -881,7 +934,7 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                             let key = keys[i]
                             if(key.includes("currentQuestionId")) {
                                 let questionId = change[2][i]
-                                window.gc.currentQuestionId = questionId
+                                window.gc.data.currentQuestionId = questionId
                             }
                         }
 					}
@@ -1243,31 +1296,44 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                 let msg = e
                 if(Array.isArray(e)) msg = new Uint8Array(e).buffer
                 this.ws.send(msg)
-                if(this.ws.outgoingCallbacks) {
-                    for(let callback of this.ws.outgoingCallbacks) {
-                        callback(msg)
-                    }
+                for(let callback of this.ws.rawMsgCallbacks) {
+                    callback(msg)
                 }
             }
             ,
             e.prototype.connect = function(e) {
                 this.ws = new C(e,this.protocols),
-
                 // inserted code
-                this.ws.outgoing = function(callback) {
-                    if(!this.outgoingCallbacks) {
-                        this.outgoingCallbacks = []
-                    }
+                this.ws.rawMsgCallbacks = []
+                this.ws.outgoingCallbacks = []
+                this.ws.stateChangeCallbacks = []
+
+                this.ws.sendObj = function(e, n) {
+                    var i, r = [t.Protocol.ROOM_DATA];
+                    if ("string" == typeof e ? z.encode.string(r, e) : z.encode.number(r, e),
+                    void 0 !== n) {
+                        var o = b(n);
+                        (i = new Uint8Array(r.length + o.byteLength)).set(new Uint8Array(r), 0),
+                        i.set(new Uint8Array(o), r.length)
+                    } else
+                        i = new Uint8Array(r);
+
+                    this.send(i.buffer)
+                }
+
+                this.ws.onRawMsg = function(callback) {
+                    this.rawMsgCallbacks.push(callback)
+                }
+
+                this.ws.onOutgoingMsg = function(callback) {
                     this.outgoingCallbacks.push(callback)
                 }
+
                 this.ws.onStateChange = function(callback) {
-                    if(!this.stateChangeCallbacks) {
-                        this.stateChangeCallbacks = []
-                    }
                     this.stateChangeCallbacks.push(callback)
                 }
 
-                window.gc.socket = this.ws
+                window.gc.setSocket(this.ws)
 
                 this.ws.binaryType = "arraybuffer",
                 this.ws.onopen = this.events.onopen,
@@ -3660,6 +3726,9 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                 var i, r = [t.Protocol.ROOM_DATA];
                 if ("string" == typeof e ? z.encode.string(r, e) : z.encode.number(r, e),
                 void 0 !== n) {
+                    for(let callback of window.gc.socket.outgoingCallbacks) {
+                        callback(e, n);
+                    }
                     var o = b(n);
                     (i = new Uint8Array(r.length + o.byteLength)).set(new Uint8Array(r), 0),
                     i.set(new Uint8Array(o), r.length)
