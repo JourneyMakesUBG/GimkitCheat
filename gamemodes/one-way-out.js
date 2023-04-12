@@ -3,45 +3,68 @@
 	https://github.com/TheLazySquid/GimkitCheat#setting-up-the-overrides
 	If you have it set up, try reloading this page with the console open.`)
 
-	let lastMenu = null
-	let shieldMessage = null
-	let medpackMessage = null
+	let purchases = gc.hud.createGroup("Purchase")
 
-	gc.hud.addTodo("Buy a medpack")
-	gc.hud.addTodo("Buy a shield can")
+	const purchasables = {
+		"Shield Can": { grantedItemId: "shield-can" },
+		"Medpack": { grantedItemId: "medpack" },
+		"Stage 2 Checkpoint": { grantedItemName: "Stage 2 Checkpoint" },
+		"Stage 3 Checkpoint": { grantedItemName: "Stage 3 Checkpoint" },
+		"Stage 2 Bridge": { purchaseChannel: "stage 2 bridge" },
+		"Stage 3 Bridge": { purchaseChannel: "stage 3 bridge" }
+	}
 
-	let observer = new MutationObserver(function() {
-		// check if a menu is going to be opened
-		let menu = document.querySelector('img[src*="/assets/map/others/enter.svg"] + div > div')
-		if(menu) {
-			if(menu.innerHTML.includes("Med Pack")) lastMenu = "medpack"
-			else if(menu.innerHTML.includes("Shield Can")) lastMenu = "shieldcan"
-			else lastMenu = null
+	for(let purchasable in purchasables) {
+		let selector = { mustHave: purchasables[purchasable] }
+		let buyDevice = gc.getDevice(selector)
+		let buyPacket = {
+			key: "purchase",
+			data: undefined,
+			deviceId: buyDevice.id
 		}
+
+		purchases.addBtn(purchasable, () => {
+			gc.socket.sendObj("MESSAGE_FOR_DEVICE", buyPacket)
+		})
+	}
+
+	let lastPos = {
+		x: null,
+		y: null
+	}
+
+	gc.socket.onOutgoingMsg((type, msg) => {
+		if(type != "MOVED") return
+		lastPos = msg
 	})
 
-	observer.observe(document.body, {
-		childList: true,
-		subtree: true
-	})
+	let autoAttacking = false
+	gc.hud.addToggleBtn("Stop auto attacking", "Auto Attack", (state) => {
+		autoAttacking = state
+	}, false)
+	
+	setInterval(() => {
+		if(!autoAttacking) return
+		let characters = JSON.parse(JSON.stringify(gc.data.serializer.getState().characters))
 
-	gc.socket.outgoing((data) => {
-		let str = new TextDecoder("utf-8").decode(data)
-		if(!str.includes("purchase")) return
-		if(lastMenu == "medpack") {
-			if(medpackMessage != null) return
-			gc.hud.completeTodo("Buy a medpack")
-			gc.hud.addBtn("Buy Medpack", () => {
-				gc.socket.send(medpackMessage)
-			})
-			medpackMessage = data
-		} else if (lastMenu == "shieldcan") {
-			if(shieldMessage != null) return
-			gc.hud.completeTodo("Buy a shield can")
-			gc.hud.addBtn("Buy Shield Can", () => {
-				gc.socket.send(shieldMessage)
-			})
-			shieldMessage = data
+		// calculate the closest sentry to the last position we were at
+		let target
+		let shortedDistance = Infinity
+		for(let id in characters) {
+			let character = characters[id]
+			if(character.type != "sentry" || character.isRespawning) continue
+			let distance = Math.sqrt(Math.pow(character.x - lastPos.x, 2) + Math.pow(character.y - lastPos.y, 2))
+			if(distance < shortedDistance) {
+				target = character
+				shortedDistance = distance
+			}
 		}
-	})
+
+		if(!target) return
+		gc.socket.sendObj("FIRE", {
+			angle: 0,
+			x: target.x,
+			y: target.y
+		})
+	}, 100)
 })()

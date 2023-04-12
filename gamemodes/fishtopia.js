@@ -3,84 +3,49 @@
 	https://github.com/TheLazySquid/GimkitCheat#setting-up-the-overrides
 	If you have it set up, try reloading this page with the console open.`)
 
-	function arrayBufferToString(buffer) {
-		return String.fromCharCode.apply(null, new Uint8Array(buffer));
+	let autoSelling = true
+	let autoFishing = false
+	gc.hud.addToggleBtn("Stop auto selling", "Auto Sell", (state) => {
+		autoSelling = state
+	}, true)
+	gc.hud.addToggleBtn("Stop fishing", "Start fishing", (state) => {
+		autoFishing = state
+	}, false)
+	let purchases = gc.hud.createGroup("Purchase")
+	let travels = gc.hud.createGroup("Travel")
+
+	// create the neccesary packets
+	let sellDevice = gc.getDevices({ mustHave: { activateChannel: "sell fish" }})[0]
+	let fishDevice = gc.getDevices({ mustHave: { channel: "attempt to fish" }})[0]
+
+	let sellPacket = {
+		key: "interacted",
+		data: undefined,
+		deviceId: sellDevice.id
 	}
 
-	gc.hud.addTodo("Fish a fish")
-	gc.hud.addTodo("Sell a fish")
-	
-	let autoselling = false;
-	let autofishing = false;
-	let lastMenu = null;
-	
-	let quickTravel = new Map()
-	let lastTravelPos = null
-	let fastTravelMenu = null
-	
-	let sellMessage = null;
-	let fishMessage = null;
+	let fishPacket = {
+		key: "interacted",
+		data: undefined,
+		deviceId: fishDevice.id
+	}
 
-	gc.socket.outgoing((data) => {
-		// decode the data from an ArrayBuffer to a string
-		let str = arrayBufferToString(data)
-		if(str.includes("interacted")) {
-			if(sellMessage == data || fishMessage == data) return
-			if(str.includes("dropped-item")) return
-			switch(lastMenu) {
-				case "fishing":
-					console.log("New fish message:", arrayBufferToString(data))
-					if(fishMessage == null) {
-						gc.hud.completeTodo("Fish a fish")
-						gc.hud.addToggleBtn("Stop autofishing", "Start autofishing", (enabled) => {
-							autofishing = enabled
-						})
-					}
-					fishMessage = data
-					break
-				case "selling":
-					console.log("New sell message:", arrayBufferToString(data))
-					sellMessage = data
-					gc.hud.completeTodo("Sell a fish")
-					gc.hud.addToggleBtn("Stop autoselling", "Start autoselling", (enabled) => {
-						autoselling = enabled
-					})
-					break
-				case "travel":
-					if(!lastTravelPos || quickTravel.has(lastTravelPos)) return
-					quickTravel.set(lastTravelPos, data)
-					// update the fast travel menu
-					if(fastTravelMenu) fastTravelMenu.addOption(lastTravelPos)
-					else {
-						fastTravelMenu = gc.hud.addDropdownButton(Array.from(quickTravel.keys()), "Travel", (pos) => {
-							gc.socket.send(quickTravel.get(pos))
-						}, "Travel")
-					}
-			}
+	setInterval(() => {
+		if(autoSelling) {
+			gc.socket.sendObj("MESSAGE_FOR_DEVICE", sellPacket)
 		}
-	})
-
-	let observer = new MutationObserver(function() {
-		// check if a menu is going to be opened
-		let menu = document.querySelector('img[src*="/assets/map/others/enter.svg"] + div > div')
-		if(menu) {
-			if(menu.innerHTML.includes("Cast Fishing Rod")) lastMenu = "fishing"
-			else if(menu.innerHTML.includes("Sell Fish")) lastMenu = "selling"
-			else if(menu.innerHTML.includes("Travel")) {
-				lastMenu = "travel"
-				lastTravelPos = menu.innerHTML.replace("Travel", "").trim()
-			}
-			else lastMenu = null
+		if(autoFishing) {
+			gc.socket.sendObj("MESSAGE_FOR_DEVICE", fishPacket)
 		}
-	})
+	}, 1000)
 
 	const tryRefish = () => {
 		window.requestAnimationFrame(tryRefish)
-		if(!autofishing) return
+		if(!autoFishing) return
 		// hit the fish again button if it exists
 		let buttons = document.querySelectorAll("button.ant-btn")
 		for(let button of buttons) {
-			if(button.innerText == "Fish Again") {
+			if(button.innerText == "Close") {
 				button.click()
 				break
 			}
@@ -88,19 +53,71 @@
 	}
 	tryRefish()
 
-	observer.observe(document.body, {
-		childList: true,
-		subtree: true
-	})
+	// create the purchase menu
+	const purchasables = {
+		"Purple Pond Ticket - $10": "purple pond boat ticket",
+		"Sandy Shores Ticket - $85": "sandy shores boat ticket",
+		"Cosmic Cove Ticket - $250": "cosmic cove boat ticket",
+		"Lucky Lake Ticket - $1000": "lucky lake ticket",
+		"Expert Rod - $75": "upgraded fishing rod",
+		"Medium Backpack - $20": "medium backpack",
+		"Large Backpack - $60": "large backpack",
+		"Bolt - $30": "bolt",
+		"No Wait - $40": "no wait",
+		"Cash in - $70": "cash in"
+	}
+	let purchaseBtns = {}
 
-	setInterval(function() {
-		// send a random answer
-		if(autoselling) gc.socket.send(sellMessage)
-		if(autofishing) {
-			// fish for fish
-			if(fishMessage) gc.socket.send(fishMessage)
+	const travelLocations = {
+		"Fishtopia": "fishtopia",
+		"Purple Pond": "purple pond",
+		"Sandy Shores": "sandy shores",
+		"Cosmic Cove": "cosmic cove",
+		"Lucky Lake": "lucky lake"
+	}
+
+	for(let name in purchasables) {
+		let item = purchasables[name]
+		let btn = purchases.addBtn(name, () => {
+			let purchaseDevice = gc.getDevices({ mustHave: { channel: `attempt purchase ${item}` }})[0]
+
+			let purchasePacket = {
+				key: "interacted",
+				data: undefined,
+				deviceId: purchaseDevice.id
+			}
+
+			gc.socket.sendObj("MESSAGE_FOR_DEVICE", purchasePacket)
+		})
+		purchaseBtns[item] = btn
+	}
+
+	for(let name in travelLocations) {
+		let item = travelLocations[name]
+		travels.addBtn(name, () => {
+			let travelDevice = gc.getDevices({ mustHave: { channel: `attempt travel ${item}` }})[0]
+
+			let travelPacket = {
+				key: "interacted",
+				data: undefined,
+				deviceId: travelDevice.id
+			}
+
+			gc.socket.sendObj("MESSAGE_FOR_DEVICE", travelPacket)
+		})
+	}
+
+	gc.socket.onOutgoingMsg((msgType, msg) => {
+		if(msgType != "UPDATE_DEVICE_UI_PRESENCE") return
+		if(!msg.deviceId) return
+		let device = gc.getDevice({ id: msg.deviceId })
+		if(!device?.data?.openWhenReceivingFrom?.includes?.("purchase")) return
+		let purchasedItem = device.data.openWhenReceivingFrom.replace("purchase ", "").trim()
+		if(purchasedItem == "lucky lake ticket") return // this is purchaseable multiple times
+		if(purchaseBtns[purchasedItem]) {
+			purchaseBtns[purchasedItem].remove()
 		}
-	}, 500)
+	})
 
 	console.log("Gimkit Cheat Loaded")
 })();

@@ -2,7 +2,7 @@
     class Cheat {
         constructor() {
             this.hud = new GCHud()
-            this.version = "0.2.4"
+            this.version = "0.2.5"
             this.dev = true;
             
             this.loadCallbacks = []
@@ -10,7 +10,10 @@
             this.data = {}
 
             console.log(`Gimkit Cheat Override v${this.version} loaded!`);
-
+            this.checkUpdate()
+        }
+        
+        checkUpdate() {
             // check for an update to the script
             try {
                 if (this.dev) return
@@ -57,7 +60,19 @@
                 return obj
             })
 
-            this.data.devices = devicesFixed
+            // merge/overwrite devices
+            if(this.data.devices) {
+                for(let device of devicesFixed) {
+                    let existingDeviceIndex = this.data.devices.findIndex(d => d.id == device.id)
+                    if(existingDeviceIndex != -1) {
+                        this.data.devices[existingDeviceIndex] = device
+                    } else {
+                        this.data.devices.push(device)
+                    }
+                }
+            } else {
+                this.data.devices = devicesFixed
+            }
         }
 
         getDevices(criteria) {
@@ -76,7 +91,12 @@
             })
             return devices
         }
+
+        getDevice(criteria) {
+            return this.getDevices(criteria)?.[0]
+        }
     }
+
 	// initalize standard stuff so multiple scripts can run simultaneously
 	class GCHud {
 		constructor() {
@@ -111,6 +131,10 @@
                 dragStartX = e.clientX
                 dragStartY = e.clientY
 			})
+            let observer = new ResizeObserver(() => {
+                drag = false
+            })
+            observer.observe(this.hud)
 			window.addEventListener("mouseup", () => drag = false)
 			window.addEventListener("mousemove", (e) => {
                 if(Math.abs(e.clientX - dragStartX) > 10 || Math.abs(e.clientY - dragStartY) > 10) draggedEnough = true
@@ -156,6 +180,7 @@
 				border-radius: 0.5rem;
 				overflow-x: hidden;
 				overflow-y: auto;
+                resize: both;
 			}
 			
 			.gc_group {
@@ -907,6 +932,7 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                 if (typeof i === "string") {
                     data = JSON.parse(i)
                 }
+                // console.log(data)
                 for(let callback of window.gc.socket.stateChangeCallbacks) {
                     callback(data)
                 }
@@ -3755,6 +3781,7 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
             e.prototype.onMessageCallback = function(e) {
                 var n = Array.from(new Uint8Array(e.data))
                   , i = n[0];
+                // console.log(n, t.Protocol[i])
                 if (i === t.Protocol.JOIN_ROOM) {
                     var r = 1;
                     if (this.serializerId = k(n, r),
@@ -3801,8 +3828,11 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
             }
             ,
             e.prototype.setState = function(e) {
-                this.serializer.setState(e),
-                this.onStateChange.invoke(this.serializer.getState())
+                this.serializer.setState(e)
+                let state = this.serializer.getState();
+                // inserted code
+                window.gc.data.serializer = this.serializer;
+                this.onStateChange.invoke(state)
             }
             ,
             e.prototype.patch = function(e) {
