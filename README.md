@@ -30,7 +30,7 @@ This script allows you to sell fish without being at the sell station and fish a
 
 This should be used in conjunction with the general script.
 
-For now, this script is pretty bare-bones. All it does is allow you to buy shield cans and medkits from anywhere. More features may be added in the future.
+This script allows you to do a variety of things. First, you can purchase health, shield, bridges and checkpoints from anywhere. Secondly, it comes with an "Auto Attack" feature. While holding a weapon out, it will automatically fire it and kill the nearest enemy to you, even through walls. This lets you earn the money from killing enemies from anywhere, so you can simply loiter at spawn doing this until you can afford to get the third checkpoint. You need to purchase the bridge before the checkpoint, like normal.
 
 ### [Farmchain](/gamemodes/farmchain.js)
 
