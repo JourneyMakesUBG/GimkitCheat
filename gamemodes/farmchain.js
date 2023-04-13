@@ -1,143 +1,195 @@
 (function() {
-	function arrayBufferToString(buffer) {
-		return String.fromCharCode.apply(null, new Uint8Array(buffer));
+	if(!window.gc) return alert(`You need to set up the override to use this script. Find instructions here:
+	https://github.com/TheLazySquid/GimkitCheat#setting-up-an-override
+	If you have it set up, try reloading this page with the console open.`)
+
+	let collectGroup = gc.hud.createGroup("Collect / Toggles")
+
+	// set up autoselling
+	let autoSelling = true
+	let sellDevice = gc.getDevice({ mustHave: { channel: "sell" } })
+	let sellPacket = {
+		key: "interacted",
+		deviceId: sellDevice.id,
+		data: undefined
 	}
 
-	gc.hud.addTodo("Collect Water")
-	gc.hud.addTodo("Conduct Research")
-	gc.hud.addTodo("Sell Crops")
-
-	let toggleGroup = gc.hud.createGroup("Toggles")
-	let harvestGroup = gc.hud.createGroup("Harvest")
-	let harvestInfo = harvestGroup.addText("Harvesting 0 plots, harvest a plot to auto harvest in the future")
-
-	let messages = {}
-	let toggles = {
-		harvest: true
-	}
-
-	let lastMenu = null;
-
-	let waterButton = null;
-	let researchButton = null;
-
-	let lastSeed = null;
-	let buySeedMenu = null;
-	let seedMsgs = new Map();
-	let harvestMsgs = new Set();
-
-	let observer = new MutationObserver(function() {
-		if(toggles.water || toggles.research) {
-			let divs = Array.from(document.querySelectorAll(".vc.maxWidth div"))
-			if(divs.some((div) =>  {
-				return div.innerText == "All empty." || div.innerText == "Research failed!"
-			})) {
-				document.querySelectorAll(".ant-btn span").forEach((span) => {
-					if(span.innerHTML == "Close") span.click()
-				})
-				waterButton?.setEnabled?.(false)
-				researchButton?.setEnabled?.(false)
-			}
-		}
-
-		// check if a menu is going to be opened
-		// a more "robust" alternative to checking classes, which are prone to change
-		let menu = document.querySelector('img[src*="/assets/map/others/enter.svg"] + div > div')
-		if(menu) {
-			if(menu.innerHTML.includes("Collect Water")) lastMenu = "water"
-			else if(menu.innerHTML.includes("Conduct Research")) lastMenu = "research"
-			else if(menu.innerHTML.includes("Seed") && !menu.innerHTML.includes("Unlock")) {
-				lastMenu = "seed"
-				lastSeed = menu.innerHTML.replace("Seed", "").trim()
-			}
-			else if(menu.innerHTML.includes("Sell")) lastMenu = "sell"
-			else if(menu.innerHTML.includes("Collect")) lastMenu = "collect"
-			else lastMenu = null	
-		}
-	})
-
-	gc.socket.outgoing((data) => {
-		let str = arrayBufferToString(data)
-		if(str.includes("interacted")) {
-			if(str.includes("dropped-item")) return
-			switch(lastMenu) {
-				case 'water':
-					if(messages.water) return
-					gc.hud.completeTodo("Collect Water")
-					messages.water = data
-					waterButton = toggleGroup.addToggleBtn("Stop Collecting Water", "Collect Water", (enabled) => {
-						toggles.water = enabled
-					})
-					break;
-				case 'research':
-					if(messages.research) return
-					gc.hud.completeTodo("Conduct Research")
-					messages.research = data
-					researchButton = toggleGroup.addToggleBtn("Stop Researching", "Auto Research", (enabled) => {
-						toggles.research = enabled
-					})
-					break;
-				case 'sell':
-					if(messages.sell) return
-					gc.hud.completeTodo("Sell Crops")
-					messages.sell = data
-					toggleGroup.addToggleBtn("Stop Selling", "Auto Sell", (enabled) => {
-						toggles.sell = enabled
-					})
-					break;
-			}
-		}
-		if(str.includes("purchase")) {
-			if(seedMsgs.has(lastSeed)) return
-			seedMsgs.set(lastSeed, data)
-			console.log(seedMsgs)
-			if(!buySeedMenu) {
-				buySeedMenu = gc.hud.addDropdownButton(Array.from(seedMsgs.keys()), "Buy", (seed) => {
-					gc.socket.send(seedMsgs.get(seed))
-				}, "Buy")
-			} else {
-				buySeedMenu.addOption(lastSeed)
-			}
-		}
-		if(str.includes("collect")) {
-			harvestMsgs.add(data)
-			harvestInfo.setText(`Harvesting ${harvestMsgs.size} plots, harvest a plot to auto harvest in the future`)
-			if(harvestMsgs.size == 1) {
-				harvestGroup.addToggleBtn("Stop Harvesting", "Auto Harvest", (enabled) => {
-					toggles.harvest = enabled
-				}, true)
-				harvest()
-			}
-		}
-	})
+	collectGroup.addToggleBtn("Stop Auto Selling", "Auto Sell", (state) => {
+		autoSelling = state
+	}, true)
 
 	setInterval(() => {
-		if(toggles.water && messages.water) {
-			gc.socket.send(messages.water)
-		}
-		if(toggles.research && messages.research) {
-			gc.socket.send(messages.research)
-		}
-		if(toggles.sell && messages.sell) {
-			gc.socket.send(messages.sell)
+		if(autoSelling) {
+			gc.socket.sendObj("MESSAGE_FOR_DEVICE", sellPacket)
 		}
 	}, 1000)
 
-	let harvestIndex = 0
-	async function harvest() {
-		if(toggles.harvest){
-			let msgs = Array.from(harvestMsgs)
-			gc.socket.send(msgs[harvestIndex])
-			harvestIndex++
-			if(harvestIndex >= msgs.length) harvestIndex = 0
-		}
-		await new Promise((resolve) => setTimeout(resolve, 1000 / harvestMsgs.size))
-		harvest()
+	let waterDevice = gc.getDevice({ mustHave: { channel: "attempt water" } })
+	let waterPacket = {
+		key: "interacted",
+		deviceId: waterDevice.id,
+		data: undefined
+	}
+	let researchDevice = gc.getDevice({ mustHave: { channel: "attempt research" } })
+	let researchPacket = {
+		key: "interacted",
+		deviceId: researchDevice.id,
+		data: undefined
 	}
 
-
-	observer.observe(document.body, {
-		childList: true,
-		subtree: true
+	collectGroup.addBtn("Collect Water", () => {
+		gc.socket.sendObj("MESSAGE_FOR_DEVICE", waterPacket)
 	})
+	collectGroup.addBtn("Get Research", () => {
+		gc.socket.sendObj("MESSAGE_FOR_DEVICE", researchPacket)
+	})
+
+	// make the seed purchase menu
+	const seedIds = {
+		"Corn Seed": "yellow-seed",
+		"Wheat Seed": "tan-seed",
+		"Potato Seed": "brown-seed",
+		"Grape Seed": "purple-seed",
+		"Raspberry Seed": "magenta-seed",
+		"Watermelon Seed": "green-seed",
+		"Coffee Bean": "bronze-seed",
+		"Orange Seed": "orange-seed",
+		"Gimberry Seed": "gold-seed",
+		"Cash Berry Seed": "dark-green-seed",
+		"Pepper Seed": "red-seed",
+		"Energy Bar Seed": "blue-seed",
+		"Lottery Ticket Seed": "teal-seed"
+	}
+
+	let purchases = gc.hud.createGroup("Purchase")
+
+	for(let seed in seedIds) {
+		let seedId = seedIds[seed]
+		let seedDevice = gc.getDevice({ mustHave: { grantAction: "Grant Item", grantedItemId: seedId }})
+
+		let packet = {
+			key: "purchase",
+			deviceId: seedDevice.id,
+			data: undefined
+		}
+
+		purchases.addBtn(seed, () => {
+			gc.socket.sendObj("MESSAGE_FOR_DEVICE", packet)
+		})
+	}
+
+	// set up seed unlocks
+	let unlockDevices = gc.getDevices({ mustHave: { purchaseChannel: "seed unlocked" }})
+
+	let unlocks = gc.hud.createGroup("Unlock")
+
+	for(let device of unlockDevices) {
+		let seedName = device.data.grantedItemName;
+
+		let packet = {
+			key: "purchase",
+			deviceId: device.id,
+			data: undefined
+		}
+
+		unlocks.addBtn(seedName, () => {
+			gc.socket.sendObj("MESSAGE_FOR_DEVICE", packet)
+		})
+	}
+
+	let autoHarvest = true
+	collectGroup.addToggleBtn("Stop Auto Harvesting", "Auto Harvest", (state) => {
+		autoHarvest = state
+	}, true)
+
+	gc.socket.onStateChange((changes) => {
+		if(!autoHarvest) return
+		for(let change of changes) {
+			for(let key in change.data) {
+				if(!key.endsWith("status") || change.data[key] != "availableForCollection") continue
+				let device = gc.getDevice({ id: change.id, mustHave: { style: "plant", channelItemFinishesCrafting: "ends planting" } })
+				if(!device) continue
+
+				// harvest it
+				let packet = {
+					key: "collect",
+					deviceId: device.id,
+					data: undefined
+				}
+
+				gc.socket.sendObj("MESSAGE_FOR_DEVICE", packet)
+			}
+		}
+	})
+	
+	// set up auto seed planting
+	let autoPlant = false
+	collectGroup.addToggleBtn("Stop Auto Planting", "Auto Plant", (state) => {
+		autoPlant = state
+	})
+		
+	let plots = gc.getDevices({ mustHave: { style: "plant" } })
+	let attemptingPlot = 0
+
+	setInterval(() => {
+		if(!autoPlant) return
+		let inventory = getInventory()
+
+		// get the highest valued seed in the inventory
+		let bestSeed
+		let bestSeedIndex = -1
+		for(let id in inventory) {
+			let index = Object.values(seedIds).indexOf(id)
+			if(index > bestSeedIndex) {
+				bestSeedIndex = index
+				bestSeed = id
+			}
+		}
+
+		if(!bestSeed) return
+		console.log("Attempting to plant", bestSeed)
+
+		let plantRecipe = gc.getDevice({ mustHave: { ingredient1Item: bestSeed }})
+
+		// make sure we have the neccesary ingredients
+		let energyNeeded = plantRecipe.data.ingredient2Amount
+		if((inventory.energy?.amount ?? 0) < energyNeeded) return console.log("Need more energy to plant")
+		let waterNeeded = plantRecipe.data.ingredient3Amount
+		if((inventory.water?.amount ?? 0) < waterNeeded) {
+			if((inventory.energy?.amount ?? 0) < 5000) return console.log("Need more water to plant")
+			gc.socket.sendObj("MESSAGE_FOR_DEVICE", waterPacket)
+			return
+		}
+
+		let plantPacket = {
+			key: "craft",
+			deviceId: plots[attemptingPlot].id,
+			data: {
+				recipe: plantRecipe.id
+			}
+		}
+	
+		gc.socket.sendObj("MESSAGE_FOR_DEVICE", plantPacket)
+
+		attemptingPlot++
+		if(attemptingPlot >= plots.length) attemptingPlot = 0
+	}, 100)
+
+
+	function getInventory() {
+		let players = JSON.parse(JSON.stringify(gc.data.serializer.getState().characters))
+		// find the closest character to the user
+		let user
+		let closest = Infinity
+		for(let id in players) {
+			let player = players[id]
+			let dist = Math.sqrt(Math.pow(player.x - gc.data.playerPos.x, 2) + Math.pow(player.y - gc.data.playerPos.y, 2))
+			if(dist < closest) {
+				closest = dist
+				user = player
+			}
+		}
+		
+		return user.inventory.slots
+	}
 })()

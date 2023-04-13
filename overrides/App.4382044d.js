@@ -2,7 +2,7 @@
     class Cheat {
         constructor() {
             this.hud = new GCHud()
-            this.version = "0.2.5"
+            this.version = "0.2.6"
             this.dev = true;
             
             this.loadCallbacks = []
@@ -403,6 +403,7 @@
 			this.element.classList.add("gc_group")
 
 			if(name != "root") {
+                this.element.style.display = "none"
 				this.element.style.animation = "gc_hidden 0s both"
 				// add the button to go back one group
 				let backBtn = document.createElement("button")
@@ -410,6 +411,10 @@
 				backBtn.innerHTML = "< Back"
 				backBtn.classList.add("gc_btn")
 				backBtn.addEventListener("click", () => {
+                    this.parentGroup.element.style.display = "block"
+                    setTimeout(() => {
+                        this.element.style.display = "none"
+                    })
 					this.slide("out", "right")
 					this.parentGroup.slide("in", "left")
 				})
@@ -606,6 +611,10 @@
 			`
 			element.classList.add("gc_group_opener")
 			element.addEventListener("click", () => {
+                groupToOpen.element.style.display = "block"
+                setTimeout(() => {
+                    group.element.style.display = "none"
+                }, 500)
 				group.slide("out", "left")
 				groupToOpen.slide("in", "right")
 				// scroll to top
@@ -932,9 +941,26 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                 if (typeof i === "string") {
                     data = JSON.parse(i)
                 }
-                // console.log(data)
-                for(let callback of window.gc.socket.stateChangeCallbacks) {
-                    callback(data)
+                if(data.changes) {
+                    for(let callback of window.gc.socket.stateChangeCallbacks) {
+                        // convert to key-value pairs
+                        let changes = data.changes.map(c => {
+                            let returnObj = {
+                                id: c[0],
+                                data: {}
+                            }
+    
+                            let keys = c[1].map(k => data.values[k])
+    
+                            for(let i = 0; i < keys.length; i++) {
+                                returnObj.data[keys[i]] = c[2][i]
+                            }
+
+                            return returnObj
+                        })
+    
+                        callback(changes)
+                    }
                 }
                 if(data.devices) {
                     window.gc.setDevices(data.devices)
@@ -967,6 +993,7 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
 
                 }
             } catch(e) {
+                console.log(e)
                 // ignore it
             }
             if (n._offset !== e.byteLength)
@@ -3750,6 +3777,10 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
             ,
             e.prototype.send = function(e, n) {
                 var i, r = [t.Protocol.ROOM_DATA];
+                // edited code
+                if(e == "MOVED") {
+                    window.gc.data.playerPos = n;
+                }
                 if ("string" == typeof e ? z.encode.string(r, e) : z.encode.number(r, e),
                 void 0 !== n) {
                     for(let callback of window.gc.socket.outgoingCallbacks) {

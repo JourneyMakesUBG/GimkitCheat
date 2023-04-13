@@ -36,7 +36,7 @@ This script allows you to do a variety of things. First, you can purchase health
 
 This should be used in conjunction with the general script.
 
-This script allows you to sell crops, get water, buy plants and harvest from anywhere. You need to harvest a plot once before it will be auto-harvested in the future.
+This script does the standard stuff of getting water, research, seeds and unlocks from anywhere. On top of that, it comes with an "auto harvest" mode which will automatically collect grown crops from wherever, and an auto plant mode. Auto plant mode automatically will plant all seeds in your inventory from wherever you are, which can then be harvested with auto harvest. Once you begin using this, all you need to do is purchase and unlock seeds for it to plant.
 
 ## Setting up the overrides
 
