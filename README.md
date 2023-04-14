@@ -44,6 +44,12 @@ This should be used in conjunction with the general script.
 
 This script allows you to purchase upgrades and invisabits from anywhere. In the future it might highlight where opponents are, but that's still in the works.
 
+### [Tag](/gamemodes/tag.js)
+
+This should be used in conjunction with the general script.
+
+For now, all this lets you do is buy upgrades from anywhere. As with capture the flag, more is in the works.
+
 ## Setting up the overrides
 
 #### Tested browsers that support local overrides

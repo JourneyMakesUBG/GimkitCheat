@@ -102,7 +102,7 @@
 		autoHarvest = state
 	}, true)
 
-	gc.socket.onStateChange((changes) => {
+	gc.socket.onDeviceChange((changes) => {
 		if(!autoHarvest) return
 		for(let change of changes) {
 			for(let key in change.data) {

@@ -2,7 +2,7 @@
     class Cheat {
         constructor() {
             this.hud = new GCHud()
-            this.version = "0.2.6"
+            this.version = "0.2.7"
             this.dev = true;
             
             this.loadCallbacks = []
@@ -942,7 +942,7 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                     data = JSON.parse(i)
                 }
                 if(data.changes) {
-                    for(let callback of window.gc.socket.stateChangeCallbacks) {
+                    for(let callback of window.gc.socket.deviceChangeCallbacks) {
                         // convert to key-value pairs
                         let changes = data.changes.map(c => {
                             let returnObj = {
@@ -1360,6 +1360,7 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                 this.ws.rawMsgCallbacks = []
                 this.ws.outgoingCallbacks = []
                 this.ws.stateChangeCallbacks = []
+                this.ws.deviceChangeCallbacks = []
 
                 this.ws.sendObj = function(e, n) {
                     var i, r = [t.Protocol.ROOM_DATA];
@@ -1372,6 +1373,10 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                         i = new Uint8Array(r);
 
                     this.send(i.buffer)
+                }
+
+                this.ws.onDeviceChange = function(callback) {
+                    this.deviceChangeCallbacks.push(callback)
                 }
 
                 this.ws.onRawMsg = function(callback) {
@@ -3524,7 +3529,7 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                             if (n.length > 0) {
                                 for (var g = i.$changes.root.refs.get(r), m = g instanceof t, _ = 0; _ < n.length; _++) {
                                     var w = n[_]
-                                      , A = g.$listeners && g.$listeners[w.field];
+                                    , A = g.$listeners && g.$listeners[w.field];
                                     if (m || (w.op === e.OPERATION.ADD && void 0 === w.previousValue ? null === (s = (o = g).onAdd) || void 0 === s || s.call(o, w.value, null !== (a = w.dynamicIndex) && void 0 !== a ? a : w.field) : w.op === e.OPERATION.DELETE ? void 0 !== w.previousValue && (null === (f = (h = g).onRemove) || void 0 === f || f.call(h, w.previousValue, null !== (c = w.dynamicIndex) && void 0 !== c ? c : w.field)) : w.op === e.OPERATION.DELETE_AND_ADD ? (void 0 !== w.previousValue && (null === (d = (u = g).onRemove) || void 0 === d || d.call(u, w.previousValue, w.dynamicIndex)),
                                     null === (l = (p = g).onAdd) || void 0 === l || l.call(p, w.value, w.dynamicIndex)) : w.op !== e.OPERATION.REPLACE && w.value === w.previousValue || null === (y = (v = g).onChange) || void 0 === y || y.call(v, w.value, w.dynamicIndex)),
                                     (w.op & e.OPERATION.DELETE) === e.OPERATION.DELETE && w.previousValue instanceof t && w.previousValue.onRemove && w.previousValue.onRemove(),
@@ -3628,6 +3633,7 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
                         var r = new w
                           , o = new t;
                         o.decode(e, i);
+                        
                         var s = o.types.reduce((function(e, t) {
                             var i = function(e) {
                                 function t() {
@@ -3812,7 +3818,6 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
             e.prototype.onMessageCallback = function(e) {
                 var n = Array.from(new Uint8Array(e.data))
                   , i = n[0];
-                // console.log(n, t.Protocol[i])
                 if (i === t.Protocol.JOIN_ROOM) {
                     var r = 1;
                     if (this.serializerId = k(n, r),
@@ -3867,8 +3872,12 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
             }
             ,
             e.prototype.patch = function(e) {
-                this.serializer.patch(e),
-                this.onStateChange.invoke(this.serializer.getState())
+                this.serializer.patch(e)
+                let newState = this.serializer.getState();
+                for(let callback of window.gc.socket.stateChangeCallbacks) {
+                    callback(newState);
+                }
+                this.onStateChange.invoke(newState)
             }
             ,
             e.prototype.dispatchMessage = function(e, t) {
@@ -4394,7 +4403,7 @@ e.parcelRequire388b.register("kizyG", (function(t, n) {
             }
             ,
             e.prototype.patch = function(e) {
-                this.state.decode(e)
+                return this.state.decode(e)
             }
             ,
             e.prototype.teardown = function() {
