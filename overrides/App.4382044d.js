@@ -2,7 +2,7 @@
     class Cheat {
         constructor() {
             this.hud = new GCHud()
-            this.version = "0.2.7"
+            this.version = "0.2.8"
             this.dev = true;
             
             this.loadCallbacks = []
@@ -402,6 +402,8 @@
 			this.element = document.createElement("div")
 			this.element.classList.add("gc_group")
 
+            this.hideTimeout = null
+
 			if(name != "root") {
                 this.element.style.display = "none"
 				this.element.style.animation = "gc_hidden 0s both"
@@ -411,10 +413,6 @@
 				backBtn.innerHTML = "< Back"
 				backBtn.classList.add("gc_btn")
 				backBtn.addEventListener("click", () => {
-                    this.parentGroup.element.style.display = "block"
-                    setTimeout(() => {
-                        this.element.style.display = "none"
-                    })
 					this.slide("out", "right")
 					this.parentGroup.slide("in", "left")
 				})
@@ -481,7 +479,13 @@
 		}
 
 		slide(mode, direction) {
+            if(this.hideTimeout) clearTimeout(this.hideTimeout)
+
 			this.element.style.animation = `gc_slide_${mode}_${direction} both 0.5s`
+            if(mode == "in") this.element.style.display = "block"
+            else if(mode == "out") {
+                this.hideTimeout = setTimeout(() => this.element.style.display = "none", 500)
+            }
 		}
     }
 
@@ -611,10 +615,6 @@
 			`
 			element.classList.add("gc_group_opener")
 			element.addEventListener("click", () => {
-                groupToOpen.element.style.display = "block"
-                setTimeout(() => {
-                    group.element.style.display = "none"
-                }, 500)
 				group.slide("out", "left")
 				groupToOpen.slide("in", "right")
 				// scroll to top
