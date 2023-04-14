@@ -38,6 +38,12 @@ This should be used in conjunction with the general script.
 
 This script does the standard stuff of getting water, research, seeds and unlocks from anywhere. On top of that, it comes with an "auto harvest" mode which will automatically collect grown crops from wherever, and an auto plant mode. Auto plant mode automatically will plant all seeds in your inventory from wherever you are, which can then be harvested with auto harvest. Once you begin using this, all you need to do is purchase and unlock seeds for it to plant.
 
+### [Capture the flag](/gamemodes/capture-the-flag.js)
+
+This should be used in conjunction with the general script.
+
+This script allows you to purchase upgrades and invisabits from anywhere. In the future it might highlight where opponents are, but that's still in the works.
+
 ## Setting up the overrides
 
 #### Tested browsers that support local overrides
