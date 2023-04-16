@@ -50,6 +50,12 @@ This should be used in conjunction with the general script.
 
 For now, all this lets you do is buy upgrades from anywhere. As with capture the flag, more is in the works.
 
+### [Snowbrawl](/gamemodes/snowbrawl.js)
+
+This should be used in conjunction with the general script.
+
+This script allows you to buy health and med packs from anywhere, but more importantly, it has an "Auto Attack" button. This allows will automatically damage and quickly kill the nearest player to you. Unlike in no way out, you really are attacking real players with this one and you effectively softlock the game in smaller lobbies. Please be responsible when using this.
+
 ## Setting up the overrides
 
 #### Tested browsers that support local overrides
