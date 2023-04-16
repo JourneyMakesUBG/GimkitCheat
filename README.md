@@ -4,55 +4,45 @@
 
 When in a Gimkit game, open the console (Ctrl+Shift+I) and paste the code for your desired gamemode after setting up an override. Read below for more information for each gamemode.
 
-## Gamemodes
+## All scripts now require a local override to be set up. Click [here](#setting-up-the-overrides) to see how to set up a local override. If you are unable to use local overrides, you can use the [old version](/v1/general.js) that doesn't require an override. You will need to answer all questions once before it begins working.
 
-Any gamemode specific script will pull up a hud to manage the script, which can be disabled by hitting shift 3 times.
+## General Use Scripts
 
-### All scripts now require a local override to be set up. Click [here](#setting-up-the-overrides) to see how to set up a local override. If you are unable to use local overrides, you can use the [old version](/v1/general.js) that doesn't require an override. You will need to answer all questions once before it begins working.
-
-### [General](/general.js)
+### [Auto answer](/general/autoanswer.js)
 
 This script automatically answers a question every ~1 second. Manually answering questions may cause them to be wrong even if they looked correct.
 
-### [Classic](/gamemodes/classic.js)
+### [Player Higlighter](/general/playerhighlight.js)
 
-This should not be used in conjunction with the general script.
+This script adds toggles that allow you to highlight where teammates and enemies are in relation to you. This is useful for games like Capture the Flag, Snowbrawl or Tag.
+
+## Gamemode Specific Scripts
+
+### [Classic](/gamemodes/classic.js)
 
 The trick for classic is loosely based around a trick found in [non-reai's Gimkit hack](https://github.com/non-reai/Gimkit-Hacks) to answer questions, rather than manually storing and answering questions. It automatically answers questions and purchases upgrades, and all you should manually do is purchase and use powerups.
 
 ### [Fishtopia](/gamemodes/fishtopia.js)
 
-This should be used in conjunction with the general script.
-
 This script allows you to sell fish without being at the sell station and fish anywhere without being at water. Additionally, after using a "travel to..." thing (such as the travel to purple pond boat), you will be able to permanently use it from anywhere.
 
 ### [One Way Out](/gamemodes/one-way-out.js)
-
-This should be used in conjunction with the general script.
 
 This script allows you to do a variety of things. First, you can purchase health, shield, bridges and checkpoints from anywhere. Secondly, it comes with an "Auto Attack" feature. While holding a weapon out, it will automatically fire it and kill the nearest enemy to you, even through walls. This lets you earn the money from killing enemies from anywhere, so you can simply loiter at spawn doing this until you can afford to get the third checkpoint. You need to purchase the bridge before the checkpoint, like normal.
 
 ### [Farmchain](/gamemodes/farmchain.js)
 
-This should be used in conjunction with the general script.
-
 This script does the standard stuff of getting water, research, seeds and unlocks from anywhere. On top of that, it comes with an "auto harvest" mode which will automatically collect grown crops from wherever, and an auto plant mode. Auto plant mode automatically will plant all seeds in your inventory from wherever you are, which can then be harvested with auto harvest. Once you begin using this, all you need to do is purchase and unlock seeds for it to plant.
 
 ### [Capture the flag](/gamemodes/capture-the-flag.js)
-
-This should be used in conjunction with the general script.
 
 This script allows you to purchase upgrades and invisabits from anywhere. In the future it might highlight where opponents are, but that's still in the works.
 
 ### [Tag](/gamemodes/tag.js)
 
-This should be used in conjunction with the general script.
-
 For now, all this lets you do is buy upgrades from anywhere. As with capture the flag, more is in the works.
 
 ### [Snowbrawl](/gamemodes/snowbrawl.js)
-
-This should be used in conjunction with the general script.
 
 This script allows you to buy health and med packs from anywhere, but more importantly, it has an "Auto Attack" button. This allows will automatically damage and quickly kill the nearest player to you. Unlike in no way out, you really are attacking real players with this one and you effectively softlock the game in smaller lobbies. Please be responsible when using this.
 

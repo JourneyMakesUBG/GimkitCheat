@@ -2,7 +2,7 @@
     class Cheat {
         constructor() {
             this.hud = new GCHud()
-            this.version = "0.2.8"
+            this.version = "0.2.9"
             this.dev = true;
             
             this.loadCallbacks = []
@@ -94,6 +94,22 @@
 
         getDevice(criteria) {
             return this.getDevices(criteria)?.[0]
+        }
+
+        getUser() {
+            let user
+            let closestPos = Infinity
+            let pos = this.data.playerPos
+            let characters = JSON.parse(JSON.stringify(gc.data.serializer.getState().characters))
+            for(let id in characters) {
+                let character = characters[id]
+                let distance = Math.sqrt(Math.pow(character.x - pos.x, 2) + Math.pow(character.y - pos.y, 2))
+                if(distance < closestPos) {
+                    closestPos = distance
+                    user = character
+                }
+            }
+            return user
         }
     }
 
